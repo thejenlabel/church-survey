@@ -226,15 +226,21 @@ body{background:#f7f8fb}
 
 
 
-/* 식사 인원 타일: 총계 위, 내역 두 줄, 구분선 양옆 여백 */
-.stat-split .sub{margin:8px 14px 0;padding-top:8px;border-top:1px solid #e6e9f2;font-size:12px;color:#6b7280}
-.stat-split .sub>div{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:2px 0}
-.stat-split .sub b{color:#2E3A8C;font-weight:800;font-size:13px}
-@media (max-width:700px){.stat-split .sub{margin:6px 8px 0;padding-top:6px;font-size:10px}.stat-split .sub b{font-size:12px}}
 
-/* 식사 타일 금액 줄 */
-.stat-split .sub>div{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:2px 0;white-space:nowrap}
-.stat-split .sub em{font-style:normal;color:#6b7280}
-.stat-split .sub .sum{border-top:1px dashed #e6e9f2;margin-top:4px;padding-top:5px;color:#374151;font-weight:600}
-.kid-n small{font-size:12px;font-weight:600;margin-left:2px}
-@media (max-width:700px){.stat-split .sub>div{white-space:normal}.stat-split .sub em{display:block;width:100%;text-align:right}}
+
+
+/* 식사 인원 타일 내역: 왼쪽 구분·인원, 오른쪽 금액(단가는 작게), 폰에서도 한 줄 */
+.stat-split .sub{margin:8px 14px 0;padding-top:8px;border-top:1px solid #e6e9f2;font-size:12px;color:#6b7280;text-align:left}
+.stat-split .sub>div{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:3px 0}
+.stat-split .sub .who{white-space:nowrap}
+.stat-split .sub .who b{color:#2E3A8C;font-weight:800}
+.stat-split .sub .amt{text-align:right;white-space:nowrap;line-height:1.15}
+.stat-split .sub .amt b{color:#2E3A8C;font-weight:800;font-size:13px;display:block}
+.stat-split .sub .amt small{display:block;font-size:10px;color:#9ca3af}
+.stat-split .sub .sum{border-top:1px dashed #e6e9f2;margin-top:4px;padding-top:6px;color:#374151;font-weight:600}
+.stat-split .sub .sum .amt b{font-size:14px}
+@media (max-width:700px){
+  .stat-split .sub{margin:6px 6px 0;padding-top:6px;font-size:10px}
+  .stat-split .sub>div{gap:4px;padding:2px 0}
+  .stat-split .sub .amt b{font-size:11px}.stat-split .sub .amt small{font-size:9px}.stat-split .sub .sum .amt b{font-size:12px}
+}

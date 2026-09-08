@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=39">
+<link rel="stylesheet" href="style.css?v=40">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -195,9 +195,9 @@ function render() {
   const mealYoung = people.filter(m => m.meal && m.young).length, mealOlder = meal - mealYoung;
   const won = n => n.toLocaleString() + '원';
   const mealTile = `<div class="stat stat-split"><div class="n">${meal}</div><div class="l">식사 인원</div><div class="sub">
-    <div><span>초등생 이상 <b>${mealOlder}명</b></span><em>× ${won(CFG.MEAL_FEE.older)} = <b>${won(mealOlder * CFG.MEAL_FEE.older)}</b></em></div>
-    <div><span>유치부 <b>${mealYoung}명</b></span><em>× ${won(CFG.MEAL_FEE.young)} = <b>${won(mealYoung * CFG.MEAL_FEE.young)}</b></em></div>
-    <div class="sum"><span>식사비 합계</span><b>${won(mealOlder * CFG.MEAL_FEE.older + mealYoung * CFG.MEAL_FEE.young)}</b></div></div></div>`;
+    <div><span class="who">초등생 이상 <b>${mealOlder}명</b></span><span class="amt"><b>${won(mealOlder * CFG.MEAL_FEE.older)}</b><small>${mealOlder}×${(CFG.MEAL_FEE.older/1000)}천원</small></span></div>
+    <div><span class="who">유치부 <b>${mealYoung}명</b></span><span class="amt"><b>${won(mealYoung * CFG.MEAL_FEE.young)}</b><small>${mealYoung}×${(CFG.MEAL_FEE.young/1000)}천원</small></span></div>
+    <div class="sum"><span class="who">식사비 합계</span><span class="amt"><b>${won(mealOlder * CFG.MEAL_FEE.older + mealYoung * CFG.MEAL_FEE.young)}</b></span></div></div></div>`;
   const excluded = people.filter(m => m.ex).length;
   const dupNote = rawCount > total ? ` · 중복 ${rawCount - total}명 제외` : '';
   const direct = list.length; // 세부소속 본인(신청자) 수
