@@ -48,7 +48,7 @@
   </div>
 </div>
 
-<script src="config.js?v=16"></script>
+<script src="config.js?v=17"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').textContent = CFG.TITLE + ' — 관리';
@@ -173,6 +173,10 @@ function render() {
   $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}<small>${k.from}~${k.to}년생</small></div><div class="kid-n">${kid[k.label].n}<small>명</small></div><div class="kid-s">식사 ${kid[k.label].meal} · 교회차 ${kid[k.label].bus}</div></div>`).join('')
     + `<div class="kid sum"><div class="kid-l">식사/교회차 미집계 인원<small>${String(CFG.EXCLUDE_BIRTH_FROM).slice(2)}년생 이후 출생자</small></div><div class="kid-n">${excluded}<small>명</small></div></div>`;
 
+  // 이름 확인(오타 의심) 표시
+  const all = DATA.flatMap(s => s.members); const typo = new Set();
+  for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) if (CFG.likelyTypo(all[i], all[j])) { typo.add(all[i]); typo.add(all[j]); }
+
   const dup = nameCounts();
   $('rows').innerHTML = list.map(s => `<tr>
     <td><b>${esc(s.name)}</b></td>
@@ -181,7 +185,7 @@ function render() {
     <td>${s.members.length}</td>
     <td>${s.members.filter(m => m.meal).length}</td>
     <td>${s.members.filter(m => m.bus).length}</td>
-    <td>${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''}${CFG.kidDept(m.birth_year) ? ' <span class="badge kidb">' + CFG.kidDept(m.birth_year) + '</span>' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
+    <td>${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''}${CFG.kidDept(m.birth_year) ? ' <span class="badge kidb">' + CFG.kidDept(m.birth_year) + '</span>' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
     <td style="white-space:nowrap;font-size:12px;color:#6b7280">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
     <td><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
@@ -190,7 +194,7 @@ function render() {
   $('cards').innerHTML = list.map(s => `<div class="scard">
     <div class="scard-h"><b>${esc(s.name)}</b><span class="hint">${esc(s.sub_group) || esc(s.group_type)}</span></div>
     <div class="scard-n">총 ${s.members.length}명 · 식사 ${s.members.filter(m => m.meal).length} · 교회차 ${s.members.filter(m => m.bus).length}</div>
-    ${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''}${CFG.kidDept(m.birth_year) ? ' <span class="badge kidb">' + CFG.kidDept(m.birth_year) + '</span>' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
+    ${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''}${CFG.kidDept(m.birth_year) ? ' <span class="badge kidb">' + CFG.kidDept(m.birth_year) + '</span>' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
     <div class="scard-f"><span class="hint">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
 }

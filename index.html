@@ -55,7 +55,7 @@
   </div>
 </div>
 
-<script src="config.js?v=16"></script>
+<script src="config.js?v=17"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
@@ -156,6 +156,20 @@ $('submit').onclick = async () => {
   const body = { name: $('name').value.replace(/\s+/g, ''), group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
   try {
+    // 0) 오타 재확인: 전화가 비슷한 기존 등록자 중 이름이 한 글자만 다른 사람이 있으면 묻는다
+    const tails = [...new Set(members.map(m => CFG.phoneTail(m.phone)).filter(t => t.length === 8))];
+    if (tails.length) {
+      const fs = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_similar', { method: 'POST', headers: H, body: JSON.stringify({ p_tails: tails }) });
+      const sim = fs.ok ? await fs.json() : [];
+      for (const m of members) {
+        const c = sim.find(x => CFG.likelyTypo(m, { name: x.person, phone: x.phone, birth_year: x.birth_year }));
+        if (!c) continue;
+        const info = x => `${x.name} (${x.birth_year || '생년 없음'} · ${x.phone || '번호 없음'})`;
+        const pick = await choose(`혹시 이분과 같은 분인가요?\n\n기존: ${info({ name: c.person, birth_year: c.birth_year, phone: c.phone })}\n입력: ${info(m)}`, [
+          { label: '같은 사람입니다 (기존 이름으로 수정)', value: 'same', primary: true }, { label: '다른 사람입니다', value: 'diff' }]);
+        if (pick === 'same') { m.name = c.person; if (m === members[0]) body.name = c.person; const r = document.querySelectorAll('.member')[members.indexOf(m)]; if (r) r.querySelector('.m-name').value = c.person; }
+      }
+    }
     // 본인·동반 이름으로 기존 등록자 조회 → 같은 사람 판정(이름·생년·전화)
     const fp = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_persons', { method: 'POST', headers: H, body: JSON.stringify({ p_names: members.map(m => m.name) }) });
     const found = fp.ok ? await fp.json() : [];

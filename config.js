@@ -70,3 +70,18 @@ CFG.countsFor = function (m) {
   const y = parseInt(String(m.birth_year || '').trim(), 10);
   return !(CFG.EXCLUDE_BIRTH_FROM && y && y >= CFG.EXCLUDE_BIRTH_FROM);
 };
+
+// 오타 의심: 이름이 같은 글자수에 한 글자만 다르고, 전화 뒤 8자리 중 6자리 이상 같고, 생년이 같거나 한쪽이 비어 있음
+CFG.phoneMatches = function (a, b) {
+  const pa = CFG.phoneTail(a), pb = CFG.phoneTail(b); if (pa.length < 8 || pb.length < 8) return 0;
+  let n = 0; for (let i = 0; i < 8; i++) if (pa[i] === pb[i]) n++; return n;
+};
+CFG.likelyTypo = function (a, b) {
+  const na = CFG.nameKey(a.name), nb = CFG.nameKey(b.name);
+  if (na === nb || na.length !== nb.length || na.length < 2) return false;
+  let same = 0; for (let i = 0; i < na.length; i++) if (na[i] === nb[i]) same++;
+  if (same !== na.length - 1) return false;
+  if (CFG.phoneMatches(a.phone, b.phone) < 6) return false;
+  const ya = String(a.birth_year || '').trim(), yb = String(b.birth_year || '').trim();
+  return !ya || !yb || ya === yb;
+};
