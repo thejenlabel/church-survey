@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=46">
+<link rel="stylesheet" href="style.css?v=47">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 </head>
@@ -27,11 +27,12 @@
     </div>
     <div class="err" id="err1"></div>
     <button class="btn" id="next">다음</button>
+    <button class="btn ghost wide" id="edit">이미 신청했어요 · 수정하기</button>
   </div>
 
   <!-- 2단계 -->
   <div class="card" id="step2" hidden>
-    <p style="margin:0 0 14px;font-weight:700">본인 포함, 함께 참석하는 가족을 모두 적어 주세요</p>
+    <p style="margin:0 0 14px;font-weight:700" id="step2Title">본인 포함, 함께 참석하는 가족을 모두 적어 주세요</p>
     <div id="members"></div>
     <button class="btn ghost" id="add">+ 인원 추가</button>
     <div class="err" id="err2"></div>
@@ -95,12 +96,14 @@ $('group').addEventListener('change', () => {
 });
 
 // 2단계 명단
-function addMember(name = '', isSelf = false) {
+let EDIT = null; // 수정 모드: { id, name }
+function addMember(name = '', isSelf = false, data = null) {
   const d = document.createElement('div');
   d.className = 'member';
   const seg = (cls, opts) => `<input type="hidden" class="${cls}"><div class="seg">${opts.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('')}</div>`;
+  const selfBtn = isSelf && EDIT ? '<button type="button" class="rm self" aria-label="본인 삭제">본인 삭제</button>' : '';
   d.innerHTML = `
-    <div class="member-h"><h4>${isSelf ? '본인' : '동반 가족'}</h4>${isSelf ? '' : '<button type="button" class="rm" aria-label="삭제">삭제</button>'}</div>
+    <div class="member-h"><h4>${isSelf ? '본인' : '동반 가족'}</h4>${isSelf ? selfBtn : '<button type="button" class="rm" aria-label="삭제">삭제</button>'}</div>
     <div class="row">
       <div><label>이름</label><input class="m-name" placeholder="이름" autocomplete="off"></div>
       <div><label>생년 (4자리)${isSelf ? ' <em>필수</em>' : ''}</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><div class="dept hint"></div></div>
@@ -115,9 +118,58 @@ function addMember(name = '', isSelf = false) {
     g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
     g.previousElementSibling.value = b.dataset.v;
   }));
+  if (data) { // 수정 모드 프리필
+    d.querySelector('.m-birth').value = data.birth_year || ''; d.querySelector('.m-phone').value = data.phone || '';
+    for (const [cls, v] of [['m-meal', data.meal], ['m-bus', data.bus]]) { if (v === undefined || v === null || v === '') continue; const inp = d.querySelector('.' + cls); inp.value = String(+v); const b = inp.nextElementSibling.querySelector(`button[data-v="${+v}"]`); if (b) b.classList.add('on'); }
+  }
   $('members').appendChild(d);
-  const rm = d.querySelector('.rm'); if (rm) rm.onclick = () => d.remove();
+  if (data) d.querySelector('.m-birth').dispatchEvent(new Event('input', { bubbles: true })); // 부서 표시(문서에 붙은 뒤)
+  const rm = d.querySelector('.rm:not(.self)'); if (rm) rm.onclick = () => d.remove();
+  const rs = d.querySelector('.rm.self'); if (rs) rs.onclick = deleteOwn;
 }
+
+// 수정 모드: 본인 삭제 = 신청 전체 삭제
+async function deleteOwn() {
+  const n = document.querySelectorAll('.member').length;
+  const ok = await choose(`본인을 삭제하면 신청한 전체 인원(${n}명)이 모두 삭제됩니다.\n정말 삭제할까요?`, [{ label: '전체 삭제', value: true, primary: true }, { label: '취소', value: false }]);
+  if (!ok) return;
+  const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY };
+  const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/delete_own', { method: 'POST', headers: H, body: JSON.stringify({ p_id: EDIT.id, p_name: EDIT.name }) });
+  if (!r.ok) { $('err2').textContent = '삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.'; return; }
+  $('step2').hidden = true; $('done').hidden = false; setStep(3);
+  $('done').querySelector('p').textContent = '신청이 삭제되었습니다';
+  $('summary').innerHTML = `${EDIT.name}님의 신청(${n}명)을 모두 삭제했습니다.`;
+  window.scrollTo(0, 0);
+}
+
+// 수정하기: 이름·소속·세부소속으로 본인 신청서 찾기
+$('edit').onclick = async () => {
+  const name = $('name').value.replace(/\s+/g, ''), g = $('group').value;
+  if (!name) { $('err1').textContent = '이름을 입력해 주세요.'; $('name').focus(); return; }
+  if (!g) { $('err1').textContent = '소속을 선택해 주세요.'; $('group').focus(); return; }
+  if (CFG.hasSub(g) && !$('sub').value) { $('err1').textContent = '세부소속을 선택해 주세요.'; $('sub').focus(); return; }
+  $('err1').textContent = ''; $('edit').disabled = true;
+  const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY };
+  try {
+    const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_own', { method: 'POST', headers: H, body: JSON.stringify({ p_name: name, p_group: g, p_sub: CFG.hasSub(g) ? $('sub').value : '' }) });
+    const list = r.ok ? await r.json() : [];
+    if (!list.length) { await choose('수정할 정보가 없습니다.\n이름·소속·세부소속이 신청할 때와 같은지 확인해 주세요.', [{ label: '확인', value: true, primary: true }]); return; }
+    let own = list[0];
+    if (list.length > 1) { // 동명이인: 생년·전화로 고르기
+      const mask = p => p ? p.replace(/(\d{3})-?\d{4}-?(\d{4})/, '$1-****-$2') : '번호 없음';
+      const pick = await choose('같은 이름의 신청이 여러 건 있습니다. 본인 것을 골라 주세요.', list.map((x, i) => ({ label: `${x.name} (${x.members[0]?.birth_year || '생년 없음'} · ${mask(x.members[0]?.phone)}) · ${x.members.length}명`, value: i, primary: i === 0 })).concat([{ label: '취소', value: -1 }]));
+      if (pick < 0) return; own = list[pick];
+    }
+    EDIT = { id: own.id, name: own.name };
+    $('members').innerHTML = '';
+    own.members.forEach((m, i) => addMember(m.name, i === 0, m));
+    $('step2Title').textContent = '신청 내용 수정 — 인원 정보를 고치거나 삭제하세요';
+    $('submit').textContent = '수정 완료';
+    $('step1').hidden = true; $('step2').hidden = false; $('backTop').hidden = false;
+    setStep(2); window.scrollTo(0, 0);
+  } catch (e) { $('err1').textContent = '불러오기에 실패했습니다. 잠시 후 다시 시도해 주세요.'; console.error(e); }
+  finally { $('edit').disabled = false; }
+};
 
 $('next').onclick = () => {
   const name = $('name').value.replace(/\s+/g, ''), g = $('group').value;
@@ -126,6 +178,7 @@ $('next').onclick = () => {
   if (!g) { $('err1').textContent = '소속을 선택해 주세요.'; $('group').focus(); return; }
   if (needSub && !$('sub').value) { $('err1').textContent = '세부소속을 선택해 주세요.'; $('sub').focus(); return; }
   $('err1').textContent = '';
+  EDIT = null; $('step2Title').textContent = '본인 포함, 함께 참석하는 가족을 모두 적어 주세요'; $('submit').textContent = '완료';
   $('members').innerHTML = '';
   addMember(name, true);
   $('step1').hidden = true; $('step2').hidden = false; $('backTop').hidden = false;
@@ -163,6 +216,18 @@ $('submit').onclick = async () => {
   const g = $('group').value;
   const body = { name: $('name').value.replace(/\s+/g, ''), group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
+  if (EDIT) { // 수정 모드: 본인 신청서를 이번 내용으로 교체
+    try {
+      const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/replace_submission_by_id', { method: 'POST', headers: H, body: JSON.stringify({ p_id: EDIT.id, p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members }) });
+      if (!r.ok) throw new Error(await r.text());
+      $('step2').hidden = true; $('done').hidden = false; setStep(3);
+      $('done').querySelector('p').textContent = '수정되었습니다';
+      const meal = members.filter(m => m.meal).length, bus = members.filter(m => m.bus).length;
+      $('summary').innerHTML = `<b>총 ${members.length}명 참석</b> · 식사 ${meal}명 · 교회 차량 ${bus}명<ul class="done-list">${members.map(m => `<li>${m.name}${m.birth_year ? ' (' + m.birth_year + ')' : ''} — ${m.meal ? '식사함' : '식사안함'} · ${m.bus ? '교회차량' : '차량불필요'}</li>`).join('')}</ul>`;
+      window.scrollTo(0, 0);
+    } catch (e) { $('err2').textContent = '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'; $('submit').disabled = false; $('submit').textContent = '수정 완료'; console.error(e); }
+    return;
+  }
   try {
     // 0) 오타 재확인: 전화가 비슷한 기존 등록자 중 이름이 한 글자만 다른 사람이 있으면 묻는다
     const tails = [...new Set(members.map(m => CFG.phoneTail(m.phone)).filter(t => t.length === 8))];

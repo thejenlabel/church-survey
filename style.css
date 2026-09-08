@@ -261,3 +261,6 @@ body{background:#f7f8fb}
 .btn.red{background:#dc2626}
 
 .rm-m.ph{border:0;background:none;cursor:default}
+
+.btn.ghost.wide{width:100%;margin-top:10px;padding:12px}
+.member .rm.self{color:#dc2626;border-color:#fca5a5}
