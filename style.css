@@ -224,9 +224,9 @@ body{background:#f7f8fb}
 .feebar .fee-v b{color:#2E3A8C;font-weight:800}
 @media (max-width:700px){.feebar{padding:8px 12px;font-size:12px}}
 
-/* 식사 인원 분리 타일 */
-.stat-split .split{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
-.stat-split .sep{width:1px;height:34px;background:#dfe4f0}
-.stat-split .l{line-height:1.25}
-.stat-split .tot{margin-top:6px;color:#9ca3af;font-size:11px}
-@media (max-width:700px){.stat-split .split{gap:2px}.stat-split .sep{height:28px}.stat-split .l{font-size:10px}.stat-split .tot{font-size:10px;margin-top:4px}}
+
+/* 식사 인원 타일: 총계 위, 분리 내역 아래 가로 */
+.stat-split .sub{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #eef0f3;font-size:12px;color:#6b7280;white-space:nowrap}
+.stat-split .sub b{color:#2E3A8C;font-weight:800}
+.stat-split .dot{width:3px;height:3px;border-radius:50%;background:#c9d3ec}
+@media (max-width:700px){.stat-split .sub{font-size:10px;gap:5px;margin-top:6px;padding-top:6px}}
