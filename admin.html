@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=23">
+<link rel="stylesheet" href="style.css?v=24">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -34,7 +34,6 @@
   <div id="app" hidden>
     <div class="stats" id="stats"></div>
     <div class="card" id="kidsCard" hidden>
-      <label style="margin-top:0">자녀 부서별</label>
       <div class="kids" id="kids"></div>
     </div>
 
@@ -45,9 +44,9 @@
     <div id="listView">
     <div class="card">
       <div class="filters three">
-        <div><label>소속별 보기</label><select id="fSub"><option value="">전체 보기</option></select></div>
-        <div><label>이름 검색</label><input id="fName" placeholder="이름 일부 입력"></div>
-        <div><label>정렬</label><select id="fSort"><option value="time|-1">최근 제출 순</option><option value="name|1">신청자 이름순</option><option value="sub|1">세부소속순</option><option value="meal|-1">식사 인원 많은 순</option><option value="bus|-1">교회차 인원 많은 순</option></select></div>
+        <div><select id="fSub" aria-label="소속별 보기"><option value="">소속: 전체</option></select></div>
+        <div><select id="fSort" aria-label="정렬"><option value="time|-1">정렬: 최근 제출</option><option value="name|1">정렬: 이름</option><option value="sub|1">정렬: 세부소속</option><option value="meal|-1">정렬: 식사 많은 순</option><option value="bus|-1">정렬: 교회차 많은 순</option></select></div>
+        <div class="span2"><input id="fName" placeholder="이름 검색" aria-label="이름 검색"></div>
       </div>
     </div>
 
@@ -65,7 +64,7 @@
 <script src="config.js?v=19"></script>
 <script>
 const $ = id => document.getElementById(id);
-$('title').textContent = CFG.TITLE + ' 관리자 페이지';
+$('title').innerHTML = `<span class="t-full">${CFG.TITLE} </span>관리자 페이지`;
 let DATA = [], PW = sessionStorage.getItem('pw') || '';
 if (PW) $('pw').value = PW;
 
@@ -209,8 +208,8 @@ function render() {
   }
   const kidTotal = Object.values(kid).reduce((a, k) => a + k.n, 0);
   $('kidsCard').hidden = false;
-  $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}<small>${k.from}~${k.to}년생</small></div><div class="kid-n">${kid[k.label].n}<small>명</small></div><div class="kid-s">식사 ${kid[k.label].meal} · 교회차 ${kid[k.label].bus}</div></div>`).join('')
-    + `<div class="kid sum"><div class="kid-l">식사/교회차 미집계 인원<small>${String(CFG.EXCLUDE_BIRTH_FROM).slice(2)}년생 이후 출생자</small></div><div class="kid-n">${excluded}<small>명</small></div></div>`;
+  $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}</div><div class="kid-n">${kid[k.label].n}</div><div class="kid-s">식사 ${kid[k.label].meal} · 차 ${kid[k.label].bus}</div></div>`).join('')
+    + `<div class="kid sum"><div class="kid-l">미집계<small>25년생~</small></div><div class="kid-n">${excluded}</div><div class="kid-s">식사·차 제외</div></div>`;
 
   // 이름 확인(오타 의심) 표시
   const all = DATA.flatMap(s => s.members); const typo = new Set();
@@ -236,10 +235,9 @@ function render() {
 
   // 모바일 카드
   $('cards').innerHTML = list.map(s => `<div class="scard">
-    <div class="scard-h"><b>${esc(s.name)}</b><span class="hint">${esc(s.sub_group) || esc(s.group_type)}</span></div>
-    <div class="scard-n">총 ${s.members.length}명 · 식사 ${s.members.filter(m => m.meal).length} · 교회차 ${s.members.filter(m => m.bus).length}</div>
+    <div class="scard-h"><b>${esc(s.name)}</b><span class="scard-g">${esc(s.sub_group) || esc(s.group_type)}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
+    <div class="scard-n">${s.members.length}명 · 식사 ${s.members.filter(m => m.meal && CFG.countsFor(m)).length} · 교회차 ${s.members.filter(m => m.bus && CFG.countsFor(m)).length}<span class="scard-t">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div>
     ${s.members.map(memHtml).join('')}
-    <div class="scard-f"><span class="hint">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
 }
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
