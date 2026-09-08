@@ -218,7 +218,7 @@ function render() {
   }
   const kidTotal = Object.values(kid).reduce((a, k) => a + k.n, 0);
   $('kidsCard').hidden = false;
-  $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}</div><div class="kid-n">${kid[k.label].n}<small>명</small></div><div class="kid-s">식사 ${kid[k.label].meal}명 · 차 ${kid[k.label].bus}자리</div></div>`).join('');
+  $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}</div><div class="kid-n">${kid[k.label].n}<small>명</small></div><div class="kid-s">식사 ${kid[k.label].meal}명 · 차량 ${kid[k.label].bus}명</div></div>`).join('');
 
   // 이름 확인(오타 의심) 표시
   const all = DATA.flatMap(s => s.members); const typo = new Set();
