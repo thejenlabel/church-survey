@@ -114,3 +114,9 @@ label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
 .done-list li{padding:8px 0;border-bottom:1px solid #eef0f3}
 .filters.three{grid-template-columns:1fr 1fr 1.2fr}
 @media (max-width:600px){.row-gap{display:none}}
+
+/* O/X 대비 강화: O는 채운 색, X는 흐린 외곽선 */
+.c-meal .badge:not(.no){background:#2E3A8C;color:#fff}
+.c-bus .badge:not(.no){background:#0f7b4f;color:#fff}
+.badge.no{background:#fff;border:1px solid #d1d5db;color:#9ca3af}
+.btn.danger{white-space:nowrap}
