@@ -325,19 +325,22 @@ $('excel').onclick = async () => {
   const uniq = new Map();
   for (const s of DATA) for (const m of s.members) { const k = idOf(m); const p = uniq.get(k) || { meal: 0, bus: 0, ex: 0, dept: CFG.kidDept(m.birth_year) }; const ok = CFG.countsFor(m); uniq.set(k, { ...p, meal: p.meal || (m.meal && ok ? 1 : 0), bus: p.bus || (m.bus && ok ? 1 : 0), ex: p.ex || (!ok && (m.meal || m.bus) ? 1 : 0) }); }
   const P = [...uniq.values()];
+  const cnt = f => P.filter(f).length;
   const sumRows = [
-    { k: '총 참석 인원', v: P.length, note: `신청 ${DATA.length}건` },
-    { k: '식사 인원', v: P.filter(p => p.meal).length, note: '' },
-    { k: '교회차 인원', v: P.filter(p => p.bus).length, note: '' },
-    ...CFG.KIDS.map(kd => { const mealN = P.filter(p => p.dept === kd.label && p.meal).length; const feeTxt = CFG.MEAL_FEE[kd.label] ? ` · 식사비 ${mealN}명 × ${CFG.MEAL_FEE[kd.label].toLocaleString()}원 = ${(mealN * CFG.MEAL_FEE[kd.label]).toLocaleString()}원` : ''; return { k: kd.label, v: P.filter(p => p.dept === kd.label).length, note: `${kd.from}~${kd.to}년생 · 식사 ${mealN} · 교회차 ${P.filter(p => p.dept === kd.label && p.bus).length}${feeTxt}` }; }),
-    ...Object.keys(CFG.MEAL_FEE).map(lbl => { const mealN = P.filter(p => p.dept === lbl && p.meal).length; return { k: `${lbl} 식사 인원`, v: mealN, note: `1인 ${CFG.MEAL_FEE[lbl].toLocaleString()}원 · 합계 ${(mealN * CFG.MEAL_FEE[lbl]).toLocaleString()}원` }; }),
-    { k: '식사·교회차 미집계', v: P.filter(p => p.ex).length, note: `${CFG.EXCLUDE_BIRTH_FROM}년생 이후 출생자 중 식사·차량 체크` }
+    { k: '총 참석 인원', v: P.length, meal: cnt(p => p.meal), bus: cnt(p => p.bus), note: `신청 ${DATA.length}건` },
+    ...CFG.KIDS.map(kd => { const mealN = cnt(p => p.dept === kd.label && p.meal); const feeTxt = CFG.MEAL_FEE[kd.label] ? ` · 식사비 ${mealN}명 × ${CFG.MEAL_FEE[kd.label].toLocaleString()}원 = ${(mealN * CFG.MEAL_FEE[kd.label]).toLocaleString()}원` : ''; return { k: kd.label, v: cnt(p => p.dept === kd.label), meal: mealN, bus: cnt(p => p.dept === kd.label && p.bus), note: `${kd.from}~${kd.to}년생${feeTxt}` }; }),
+    { k: `식사·교회차 미집계`, v: cnt(p => p.ex), meal: '-', bus: '-', note: `${CFG.EXCLUDE_BIRTH_FROM}년생 이후 출생자 중 식사·차량 체크 (집계 제외)` }
   ];
   const bySub = {}; for (const s of DATA) { const key = s.group_type + (s.sub_group ? ' · ' + s.sub_group : ''); const o = bySub[key] = bySub[key] || { sub: key, n: 0, total: 0, meal: 0, bus: 0 }; o.n++; for (const m of s.members) { o.total++; if (m.meal && CFG.countsFor(m)) o.meal++; if (m.bus && CFG.countsFor(m)) o.bus++; } }
-  const ws0 = sheet('요약', '온가족예배 참석자 사전조사 · 요약', [{ h: '항목', k: 'k', w: 22 }, { h: '인원', k: 'v', w: 10, align: 'center' }, { h: '비고', k: 'note', w: 48 }], sumRows);
-  ws0.addRow([]); const h2 = ws0.addRow(['소속별', '신청 건수', '총인원 / 식사 / 교회차']); h2.eachCell(c => { c.font = { name: 'Malgun Gothic', bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A63A9' } }; c.alignment = { horizontal: 'center' }; c.border = border; });
-  Object.values(bySub).sort((a, b) => a.sub.localeCompare(b.sub, 'ko')).forEach(o => { const r = ws0.addRow([o.sub, o.n, `${o.total} / ${o.meal} / ${o.bus}`]); r.eachCell({ includeEmpty: true }, (c, i) => { c.font = { name: 'Malgun Gothic', size: 10 }; c.border = border; c.alignment = { horizontal: i === 1 ? 'left' : 'center' }; }); });
+  const SUMCOLS = [{ h: '항목', k: 'k', w: 22 }, { h: '인원', k: 'v', w: 9, align: 'center' }, { h: '식사', k: 'meal', w: 9, align: 'center' }, { h: '교회차', k: 'bus', w: 9, align: 'center' }, { h: '비고', k: 'note', w: 52 }];
+  const ws0 = sheet('요약', '온가족예배 참석자 사전조사 · 요약', SUMCOLS, sumRows);
   ws0.autoFilter = undefined;
+  ws0.addRow([]);
+  const h2 = ws0.addRow(['소속별', '신청 건수', '총인원', '식사', '교회차']); h2.height = 22;
+  h2.eachCell(c => { c.font = { name: 'Malgun Gothic', bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A63A9' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
+  Object.values(bySub).sort((a, b) => a.sub.localeCompare(b.sub, 'ko')).forEach((o, i) => { const r = ws0.addRow([o.sub, o.n, o.total, o.meal, o.bus]); r.height = 20; r.eachCell({ includeEmpty: true }, (c, ci) => { c.font = { name: 'Malgun Gothic', size: 10 }; c.border = border; c.alignment = { vertical: 'middle', horizontal: ci === 1 ? 'left' : 'center' }; if (i % 2 === 1) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT } }; }); });
+  const tot = Object.values(bySub).reduce((a, o) => ({ n: a.n + o.n, total: a.total + o.total, meal: a.meal + o.meal, bus: a.bus + o.bus }), { n: 0, total: 0, meal: 0, bus: 0 });
+  const tr0 = ws0.addRow(['합계', tot.n, tot.total, tot.meal, tot.bus]); tr0.eachCell({ includeEmpty: true }, (c, ci) => { c.font = { name: 'Malgun Gothic', bold: true, size: 10 }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE1E6F3' } }; c.border = border; c.alignment = { vertical: 'middle', horizontal: ci === 1 ? 'left' : 'center' }; });
 
   // ② 신청자별
   sheet('신청자별', '신청자별 명단', [
