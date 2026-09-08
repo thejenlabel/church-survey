@@ -196,3 +196,24 @@ body{background:#f7f8fb}
 .kid-fee{font-size:11px;color:#9a5b00;margin-top:3px;white-space:nowrap}
 .kid-fee b{font-weight:700}
 @media (max-width:700px){.kid-fee{font-size:10px;white-space:normal}}
+
+/* ===== 요약 타일 통일: 큰 숫자 3칸 + 작은 숫자 4칸, 같은 흰 타일 언어 ===== */
+.kids{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0}
+.kid,.kid.sum,.kid.fee{border:0;border-left:0;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(30,40,90,.06);padding:12px 12px 10px;text-align:center}
+.kid.sum{background:#eef1f8}
+.kid-l{font-size:12px;font-weight:600;color:#6b7280}
+.kid-l .kid-sub{font-weight:400;color:#9ca3af}
+.kid-n{font-size:22px;font-weight:800;color:#2E3A8C;line-height:1.15;margin:2px 0 0}
+.kid-s{font-size:11px;color:#6b7280;margin-top:2px}
+.kid-fee{font-size:11px;color:#9a5b00;margin-top:4px;white-space:nowrap}
+.kid.fee .kid-n{color:#9a5b00}
+.stats{gap:12px;margin:0 0 12px}
+/* 머리(제목·로고) ↔ 탭 사이 띄우기 */
+.head{margin:0 0 28px;padding:6px 0 0}
+.toolrow{margin:0 0 32px}
+@media (max-width:700px){
+  .kids{gap:8px}.kid,.kid.sum,.kid.fee{padding:8px 4px 6px;text-align:center}
+  .kid-l{font-size:11px}.kid-n{font-size:18px}.kid-s{font-size:10px}.kid-fee{font-size:10px;white-space:normal}
+  .stats{gap:8px;margin:0 0 8px}
+  .head{margin:0 0 18px}.toolrow{margin:0 0 22px}
+}
