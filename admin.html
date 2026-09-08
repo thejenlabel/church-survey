@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="style.css?v=21">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -25,7 +25,7 @@
   <div class="card" id="toolbar" hidden>
     <div class="topbar">
       <button class="btn" id="excel">전체 명단 엑셀</button>
-      <button class="btn" id="excelBus">차량 탑승자 엑셀</button>
+      <button class="btn" id="busToggle">차량 탑승자</button>
       <button class="btn ghost" id="reload">새로고침</button>
       <button class="btn ghost" id="logout">나가기</button>
     </div>
@@ -39,6 +39,11 @@
       <div class="kids" id="kids"></div>
     </div>
 
+    <div class="card" id="busView" hidden>
+      <div class="bus-head"><b>차량 탑승자</b> <span class="hint" id="busSummary"></span></div>
+      <div id="busList"></div>
+    </div>
+    <div id="listView">
     <div class="card">
       <div class="filters">
         <div><label>세부소속 (순장·리더·교사)</label><select id="fSub"><option value="">마스터 · 전체 보기</option></select></div>
@@ -49,9 +54,10 @@
     <div id="cards" class="cards"></div>
     <div class="tbl">
       <table>
-        <thead><tr><th>신청자</th><th>소속</th><th>세부소속</th><th>인원</th><th>식사</th><th>교회차</th><th>참석자 명단</th><th>제출시각</th><th></th></tr></thead>
+        <thead><tr><th class="sortable" data-sort="name">신청자</th><th>소속</th><th class="sortable" data-sort="sub">세부소속</th><th>인원</th><th class="sortable" data-sort="meal">식사</th><th class="sortable" data-sort="bus">교회차</th><th>참석자 명단</th><th class="sortable" data-sort="time">제출시각</th><th></th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
+    </div>
     </div>
   </div>
 </div>
@@ -86,7 +92,7 @@ async function load() {
   try {
     if (!(await rpc('admin_check', { pw: PW }))) { $('err').textContent = '비밀번호가 틀렸습니다.'; return; }
     sessionStorage.setItem('pw', PW);
-    DATA = await rpc('admin_list', { pw: PW });
+    DATA = await rpc('admin_list', { pw: PW }); await loadCheckins();
     $('loginCard').hidden = true; $('toolbar').hidden = false; $('app').hidden = false;
     render();
     await dedupe(true);
@@ -145,12 +151,31 @@ async function dedupe(auto) {
   } catch (e) { alert('정리 실패: ' + e.message); }
 }
 
+let SORT = { key: 'time', dir: -1 }; // 기본: 최근 제출 순
+const SORT_VAL = {
+  name: s => s.name, sub: s => (s.sub_group || '') + s.group_type,
+  meal: s => s.members.filter(m => m.meal && CFG.countsFor(m)).length,
+  bus: s => s.members.filter(m => m.bus && CFG.countsFor(m)).length,
+  time: s => new Date(s.created_at).getTime()
+};
+document.querySelectorAll('th.sortable').forEach(th => th.onclick = () => {
+  const k = th.dataset.sort;
+  SORT = SORT.key === k ? { key: k, dir: -SORT.dir } : { key: k, dir: (k === 'meal' || k === 'bus' || k === 'time') ? -1 : 1 };
+  render();
+});
+function applySort(list) {
+  const v = SORT_VAL[SORT.key];
+  return list.slice().sort((a, b) => { const x = v(a), y = v(b); return (x > y ? 1 : x < y ? -1 : 0) * SORT.dir; });
+}
 function render() {
   const [fg, fs] = ($('fSub').value || '|').split('|');
   const q = $('fName').value.trim();
   let list = DATA;
   if (fg) list = list.filter(s => s.group_type === fg && (fs === '' ? true : s.sub_group === fs));
   if (q) list = list.filter(s => s.members.some(m => m.name.includes(q)) || s.name.includes(q));
+  list = applySort(list);
+  document.querySelectorAll('th.sortable').forEach(th => th.textContent = th.textContent.replace(/ [▲▼]$/, '') + (th.dataset.sort === SORT.key ? (SORT.dir > 0 ? ' ▲' : ' ▼') : ''));
+  renderBus();
 
   // 같은 이름은 1명으로 집계(식사·차량은 하나라도 O면 O)
   buildIdentity();
@@ -226,13 +251,32 @@ document.addEventListener('click', async e => {
   catch (err) { alert('삭제 실패: ' + err.message); }
 });
 
-// 차량 탑승자 명단: 이름·생년·전화번호 (교회차 집계 대상만, 가족끼리 붙어 나오도록 신청서 순)
-$('excelBus').onclick = () => {
-  const rows = DATA.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-    .flatMap(s => s.members.filter(m => m.bus && CFG.countsFor(m)).map(m => ({ 이름: m.name, 생년: m.birth_year || '', 전화번호: m.phone || '' })));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ 이름: '', 생년: '', 전화번호: '' }]), '차량탑승자');
-  XLSX.writeFile(wb, `교회차_탑승자_${new Date().toISOString().slice(0, 10)}.xlsx`);
+// 차량 탑승자: 이름순 목록 + 탑승 확인 체크(모든 기기에서 공유 저장)
+let CHECK = {};
+async function loadCheckins() { try { const rows = await rpc('admin_checkins', { pw: PW }); CHECK = {}; for (const r of rows) CHECK[r.key] = r.checked; } catch (e) { console.error(e); } }
+function renderBus() {
+  const riders = DATA.flatMap(s => s.members.filter(m => m.bus && CFG.countsFor(m)).map(m => ({ key: s.id + '|' + keyOf(m.name), m, s })))
+    .sort((a, b) => a.m.name.localeCompare(b.m.name, 'ko'));
+  const done = riders.filter(r => CHECK[r.key]).length;
+  $('busSummary').textContent = riders.length ? `${riders.length}명 · 탑승 확인 ${done}명 · 미확인 ${riders.length - done}명` : '교회차 신청자가 없습니다';
+  $('busList').innerHTML = riders.map(r => `<label class="rider ${CHECK[r.key] ? 'on' : ''}">
+    <input type="checkbox" data-key="${r.key}" ${CHECK[r.key] ? 'checked' : ''}>
+    <span class="r-name">${esc(r.m.name)}${r.m.birth_year ? ' <small>(' + esc(r.m.birth_year) + ')</small>' : ''}</span>
+    <span class="r-phone">${esc(r.m.phone || '')}</span>
+    <span class="r-sub">${esc(r.s.name)}${r.s.name !== r.m.name ? ' 신청' : ''}</span>
+  </label>`).join('');
+}
+$('busList').addEventListener('change', async e => {
+  const cb = e.target.closest('input[type=checkbox]'); if (!cb) return;
+  const key = cb.dataset.key, val = cb.checked; CHECK[key] = val; cb.closest('.rider').classList.toggle('on', val); renderBus();
+  try { await rpc('admin_set_checkin', { pw: PW, p_key: key, p_checked: val }); }
+  catch (err) { CHECK[key] = !val; renderBus(); alert('저장 실패: ' + err.message); }
+});
+$('busToggle').onclick = () => {
+  const show = $('busView').hidden;
+  $('busView').hidden = !show; $('listView').hidden = show; $('stats').hidden = show; $('kidsCard').hidden = show;
+  $('busToggle').textContent = show ? '전체 명단으로' : '차량 탑승자';
+  if (show) renderBus();
 };
 $('excel').onclick = () => {
   // 시트1: 신청자별 (조사표 '최종페이지' 형식)

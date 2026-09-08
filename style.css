@@ -48,7 +48,7 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .scard-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:16px}
 .scard-n{font-size:13px;color:#4A63A9;font-weight:600;margin:4px 0 8px}
 .scard-f{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-@media (max-width:700px){#toolbar .topbar .btn{flex:1 1 100%;white-space:nowrap}.topbar .btn{flex:1 1 45%}.mem{grid-template-columns:minmax(110px,auto) 56px 52px 52px auto;font-size:12px}.cards{display:block}.tbl{display:none}.stats{gap:6px}.stat{padding:10px 4px}.stat .n{font-size:22px}.stat .l{font-size:11px}.topbar .btn{flex:1}}
+@media (max-width:700px){#toolbar .topbar .btn{flex:1 1 45%;white-space:nowrap}.topbar .btn{flex:1 1 45%}.mem{grid-template-columns:minmax(110px,auto) 56px 52px 52px auto;font-size:12px}.cards{display:block}.tbl{display:none}.stats{gap:6px}.stat{padding:10px 4px}.stat .n{font-size:22px}.stat .l{font-size:11px}.topbar .btn{flex:1}}
 [hidden]{display:none!important}
 .back{border:0;background:none;color:#2E3A8C;font:inherit;font-weight:600;padding:0;margin:0 0 6px;cursor:pointer}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
@@ -66,3 +66,13 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .badge.kidb{background:#fff3e0;color:#9a5b00}
 @media (max-width:700px){.kids{grid-template-columns:repeat(2,1fr)}}
 .stat .l small{color:#9ca3af;font-size:11px}
+th.sortable{cursor:pointer;user-select:none;color:#2E3A8C}
+th.sortable:hover{text-decoration:underline}
+.bus-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;font-size:15px}
+.rider{display:grid;grid-template-columns:28px 1fr auto;grid-template-areas:"cb name phone" "cb sub sub";align-items:center;gap:2px 10px;padding:10px 8px;border-bottom:1px solid #eef0f3;cursor:pointer}
+.rider:last-child{border-bottom:0}
+.rider.on{background:#eef7ee}
+.rider input{grid-area:cb;width:22px;height:22px;accent-color:#2E3A8C}
+.rider .r-name{grid-area:name;font-size:16px;font-weight:600}.rider .r-name small{color:#6b7280;font-weight:400}
+.rider .r-phone{grid-area:phone;font-size:14px;color:#374151}
+.rider .r-sub{grid-area:sub;font-size:12px;color:#9ca3af}
