@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=42">
+<link rel="stylesheet" href="style.css?v=43">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -65,9 +65,26 @@
   </div>
 </div>
 
+<div id="modal" class="modal" hidden>
+  <div class="modal-box">
+    <p id="modalMsg" style="white-space:pre-line;margin:0 0 14px"></p>
+    <div id="modalBtns" class="modal-btns"></div>
+  </div>
+</div>
+
 <script src="config.js?v=22"></script>
 <script>
 const $ = id => document.getElementById(id);
+// 자체 안내창(브라우저 confirm/alert 대체 — 일부 앱 내 브라우저가 기본 창을 막음)
+function choose(msg, btns) {
+  return new Promise(resolve => {
+    $('modalMsg').textContent = msg; $('modalBtns').innerHTML = '';
+    for (const b of btns) { const el = document.createElement('button'); el.className = 'btn' + (b.primary ? (b.danger ? ' red' : '') : ' ghost'); el.textContent = b.label; el.onclick = () => { $('modal').hidden = true; resolve(b.value); }; $('modalBtns').appendChild(el); }
+    $('modal').hidden = false;
+  });
+}
+const ask = (msg, okLabel = '삭제') => choose(msg, [{ label: okLabel, value: true, primary: true, danger: true }, { label: '취소', value: false }]);
+const notify = msg => choose(msg, [{ label: '확인', value: true, primary: true }]);
 $('title').innerHTML = `<span class="t-full">${CFG.TITLE} </span>관리자 페이지`;
 let DATA = [], PW = sessionStorage.getItem('pw') || '';
 if (PW) $('pw').value = PW;
@@ -129,7 +146,7 @@ function nameCounts() {
 async function dedupe(auto) {
   const c = nameCounts(); const dups = Object.keys(c).filter(k => c[k] > 1);
   $('notice').textContent = '';
-  if (!dups.length) { if (!auto) alert('중복된 이름이 없습니다.'); return; }
+  if (!dups.length) { if (!auto) notify('중복된 이름이 없습니다.'); return; }
   const sorted = [...DATA].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   const plan = []; // {id, members}
   const keep = {};
@@ -142,7 +159,7 @@ async function dedupe(auto) {
     if (nm.length !== s.members.length) plan.push({ id: s.id, name: s.name, members: nm });
   }
   const desc = plan.map(p => `${p.name} 신청서 ${DATA.find(s => s.id === p.id).members.length}명 → ${p.members.length}명${p.members.length ? '' : ' (삭제)'}`).join(', ');
-  if (!auto && !confirm(`중복 ${dups.length}명을 정리합니다.\n${desc}\n\n진행할까요?`)) return;
+  if (!auto && !await ask(`중복 ${dups.length}명을 정리합니다.\n${desc}\n\n진행할까요?`, '정리')) return;
   try {
     for (const p of plan) {
       if (p.members.length) { await rpc('admin_set_members', { pw: PW, target: p.id, new_members: p.members }); DATA.find(s => s.id === p.id).members = p.members; }
@@ -150,7 +167,7 @@ async function dedupe(auto) {
     }
     render();
     $('notice').textContent = `중복 ${dups.length}명 자동 정리: ${desc}`;
-  } catch (e) { alert('정리 실패: ' + e.message); }
+  } catch (e) { notify('정리 실패: ' + e.message); }
 }
 
 let SORT = { key: 'time', dir: -1 }; // 기본: 최근 제출 순
@@ -259,18 +276,18 @@ document.addEventListener('click', async e => {
   if (rm) {
     const s = DATA.find(x => x.id === rm.dataset.sid); if (!s) return;
     const name = rm.dataset.mname;
-    if (s.members.length <= 1) { if (!confirm(`${name}님이 이 신청서의 유일한 참석자입니다.\n신청서 전체를 삭제할까요?`)) return;
-      try { await rpc('admin_delete', { pw: PW, target: s.id }); DATA = DATA.filter(x => x.id !== s.id); render(); } catch (err) { alert('삭제 실패: ' + err.message); } return; }
-    if (!confirm(`${name}님을 ${s.name}님 신청서에서 삭제할까요?`)) return;
+    if (s.members.length <= 1) { if (!await ask(`${name}님이 이 신청서의 유일한 참석자입니다.\n신청서 전체를 삭제할까요?`, '신청서 삭제')) return;
+      try { await rpc('admin_delete', { pw: PW, target: s.id }); DATA = DATA.filter(x => x.id !== s.id); render(); } catch (err) { notify('삭제 실패: ' + err.message); } return; }
+    if (!await ask(`${name}님을 ${s.name}님 신청서에서 삭제할까요?`)) return;
     const nm = s.members.filter(m => keyOf(m.name) !== keyOf(name));
     try { await rpc('admin_set_members', { pw: PW, target: s.id, new_members: nm }); s.members = nm; if (keyOf(s.name) === keyOf(name) && nm.length) s.name = nm[0].name; render(); }
-    catch (err) { alert('삭제 실패: ' + err.message); }
+    catch (err) { notify('삭제 실패: ' + err.message); }
     return;
   }
   const b = e.target.closest('button[data-id]'); if (!b) return;
-  if (!confirm(`${b.dataset.name} 신청서를 삭제할까요?`)) return;
+  if (!await ask(`${b.dataset.name} 신청서를 삭제할까요?\n(참석자 ${(DATA.find(s => s.id === b.dataset.id) || { members: [] }).members.length}명)`, '신청서 삭제')) return;
   try { await rpc('admin_delete', { pw: PW, target: b.dataset.id }); DATA = DATA.filter(s => s.id !== b.dataset.id); render(); }
-  catch (err) { alert('삭제 실패: ' + err.message); }
+  catch (err) { notify('삭제 실패: ' + err.message); }
 });
 
 // 차량 탑승자: 이름순 목록 + 탑승 확인 체크(모든 기기에서 공유 저장)
@@ -292,7 +309,7 @@ $('busList').addEventListener('change', async e => {
   const cb = e.target.closest('input[type=checkbox]'); if (!cb) return;
   const key = cb.dataset.key, val = cb.checked; CHECK[key] = val; cb.closest('.rider').classList.toggle('on', val); renderBus();
   try { await rpc('admin_set_checkin', { pw: PW, p_key: key, p_checked: val }); }
-  catch (err) { CHECK[key] = !val; renderBus(); alert('저장 실패: ' + err.message); }
+  catch (err) { CHECK[key] = !val; renderBus(); notify('저장 실패: ' + err.message); }
 });
 function showView(bus) {
   $('busView').hidden = !bus; $('listView').hidden = bus; $('stats').hidden = bus; $('kidsCard').hidden = bus;
