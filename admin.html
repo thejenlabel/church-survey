@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=34">
+<link rel="stylesheet" href="style.css?v=35">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -38,6 +38,7 @@
       <div class="stats" id="stats"></div>
       <div id="kidsCard" hidden>
         <div class="kids" id="kids"></div>
+        <div id="fees"></div>
       </div>
     </section>
 
@@ -212,9 +213,10 @@ function render() {
   }
   const kidTotal = Object.values(kid).reduce((a, k) => a + k.n, 0);
   $('kidsCard').hidden = false;
-  const fee = k => CFG.MEAL_FEE[k.label] ? `<div class="kid-fee">식사 <b>${kid[k.label].meal}명</b> × ${CFG.MEAL_FEE[k.label].toLocaleString()}원 = <b>${(kid[k.label].meal * CFG.MEAL_FEE[k.label]).toLocaleString()}원</b></div>` : '';
-  $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid ${CFG.MEAL_FEE[k.label] ? 'fee' : ''}"><div class="kid-l">${k.label}</div><div class="kid-n">${kid[k.label].n}</div><div class="kid-s">식사 ${kid[k.label].meal} · 차 ${kid[k.label].bus}</div>${fee(k)}</div>`).join('')
+  $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}</div><div class="kid-n">${kid[k.label].n}</div><div class="kid-s">식사 ${kid[k.label].meal} · 차 ${kid[k.label].bus}</div></div>`).join('')
     + `<div class="kid sum"><div class="kid-l">미집계 <span class="kid-sub">${String(CFG.EXCLUDE_BIRTH_FROM).slice(2)}년생~</span></div><div class="kid-n">${excluded}</div><div class="kid-s">식사·차 제외</div></div>`;
+  // 식사비 줄(별도)
+  $('fees').innerHTML = Object.keys(CFG.MEAL_FEE).map(lbl => { const n = kid[lbl] ? kid[lbl].meal : 0; const fee = CFG.MEAL_FEE[lbl]; return `<div class="feebar"><span class="fee-l">${lbl} 식사비</span><span class="fee-v"><b>${n}명</b> × ${fee.toLocaleString()}원 = <b>${(n * fee).toLocaleString()}원</b></span></div>`; }).join('');
 
   // 이름 확인(오타 의심) 표시
   const all = DATA.flatMap(s => s.members); const typo = new Set();
