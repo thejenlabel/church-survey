@@ -39,11 +39,11 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <p class="hint">⚠️ 표시 = 같은 사람이 다른 신청서에도 있음. 같은 사람 판정: 이름 같음 + 생년 같음 + 전화 뒤 8자리 중 6자리 이상 같음. 하나라도 비어 있거나 다르면 다른 사람. 위 집계는 같은 이름을 1명으로만 셉니다. 「중복 자동 정리」를 누르면 본인이 직접 낸 신청서를 우선 남기고 나머지에서 뺍니다.</p>
+    <p class="hint">⚠️ 표시 = 같은 사람이 다른 신청서에도 있음. 같은 사람 판정 순서: 이름 → 전화 뒤 8자리 중 6자리 이상 → 생년. 셋 다 맞아야 같은 사람. 위 집계는 같은 이름을 1명으로만 셉니다. 「중복 자동 정리」를 누르면 본인이 직접 낸 신청서를 우선 남기고 나머지에서 뺍니다.</p>
   </div>
 </div>
 
-<script src="config.js?v=11"></script>
+<script src="config.js?v=12"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').textContent = CFG.TITLE + ' — 관리';
