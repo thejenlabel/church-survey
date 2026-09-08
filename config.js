@@ -41,8 +41,12 @@ CFG.fmtPhone = function (v) {
 CFG.nameKey = n => String(n || '').replace(/\s+/g, '');
 CFG.phoneTail = p => String(p || '').replace(/\D/g, '').slice(-8); // 앞 010 제외 8자리
 // 이름 같고, 전화 뒤 8자리 중 6자리 이상 같으면 같은 사람 (한쪽 번호가 없으면 이름만으로 같은 사람)
+// 판정 순서: 이름 다르면 다른 사람 → 생년이 둘 다 있고 다르면 다른 사람 → 전화 규칙 → '동명이인' 표시된 사람은 항상 다른 사람
 CFG.samePerson = function (a, b) {
   if (CFG.nameKey(a.name) !== CFG.nameKey(b.name)) return false;
+  if (a.distinct || b.distinct) return false;
+  const ya = String(a.birth_year || '').trim(), yb = String(b.birth_year || '').trim();
+  if (ya && yb && ya !== yb) return false;
   const pa = CFG.phoneTail(a.phone), pb = CFG.phoneTail(b.phone);
   if (pa.length < 8 || pb.length < 8) return true;
   let same = 0; for (let i = 0; i < 8; i++) if (pa[i] === pb[i]) same++;

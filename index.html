@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div class="wrap">
@@ -45,7 +45,7 @@
   </div>
 </div>
 
-<script src="config.js?v=9"></script>
+<script src="config.js?v=10"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
@@ -131,36 +131,40 @@ $('submit').onclick = async () => {
   const body = { name: $('name').value.replace(/\s+/g, ''), group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
   try {
-    // 같은 이름·소속으로 이미 제출됐는지 확인
-    const dupRes = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_dup', { method: 'POST', headers: H, body: JSON.stringify({ p_name: body.name, p_group: body.group_type, p_sub: body.sub_group }) });
-    const dup = dupRes.ok ? await dupRes.json() : 0;
-    let res;
-    if (dup === 0) {
-      // 본인·동반 중 이미 다른 신청서에 등록된 사람 확인
-      const fp = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_persons', { method: 'POST', headers: H, body: JSON.stringify({ p_names: members.map(m => m.name) }) });
-      const found = fp.ok ? await fp.json() : [];
-      // found: 같은 이름의 기존 등록자 [{person, phone, submitter}] → 전화번호 규칙으로 같은 사람만 중복 처리
-      const matchOf = m => [...new Set(found.filter(f => CFG.samePerson(m, { name: f.person, phone: f.phone })).map(f => f.submitter))];
-      const dupList = members.map(m => ({ m, subs: matchOf(m) })).filter(x => x.subs.length);
-      if (dupList.length) {
-        const dupNames = dupList.map(x => `${x.m.name}님 (${x.subs.join(', ')}님 신청서)`);
-        const rest = members.filter(m => !dupList.some(x => x.m === m));
+    // 본인·동반 이름으로 기존 등록자 조회 → 같은 사람 판정(이름·생년·전화)
+    const fp = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_persons', { method: 'POST', headers: H, body: JSON.stringify({ p_names: members.map(m => m.name) }) });
+    const found = fp.ok ? await fp.json() : [];
+    const asPerson = f => ({ name: f.person, phone: f.phone, birth_year: f.birth_year, distinct: f.distinct });
+    let res, replaceId = null;
+    // 1) 본인이 직접 낸 기존 신청서가 있으면 → 교체
+    const own = found.find(f => f.is_self && CFG.samePerson(members[0], asPerson(f)));
+    if (own) {
+      if (!confirm(`${body.name}님은 이미 제출된 신청이 있습니다.\n기존 신청을 지우고 이번 내용으로 교체할까요?`)) {
+        $('submit').disabled = false; $('submit').textContent = '완료'; return;
+      }
+      replaceId = own.sid;
+    }
+    // 2) 그 외 이미 다른 신청서에 들어 있는 같은 사람
+    const others = found.filter(f => !(own && f.sid === own.sid));
+    const matchOf = m => [...new Set(others.filter(f => CFG.samePerson(m, asPerson(f))).map(f => f.submitter))];
+    const dupList = members.map(m => ({ m, subs: matchOf(m) })).filter(x => x.subs.length);
+    if (dupList.length) {
+      const dupNames = dupList.map(x => `${x.m.name}님 (${x.subs.join(', ')}님 신청서)`);
+      const rest = members.filter(m => !dupList.some(x => x.m === m));
+      const same = confirm(`아래 분은 이미 다른 신청서에 등록되어 있습니다.\n\n${dupNames.join('\n')}\n\n같은 사람이 맞으면 [확인] → 이분은 빼고 저장합니다.\n이름만 같은 다른 사람이면 [취소] → 동명이인으로 저장합니다.\n(생년·전화번호를 적으면 자동으로 구분됩니다)`);
+      if (same) {
         if (!rest.length) {
-          alert(`이미 등록되어 있어 다시 제출할 필요가 없습니다.\n\n${dupNames.join('\n')}\n\n수정이 필요하면 해당 신청서를 제출한 분이 다시 제출해 주세요.`);
-          $('submit').disabled = false; $('submit').textContent = '완료'; return;
-        }
-        if (!confirm(`아래 분은 이미 다른 신청서에 등록되어 있습니다.\n\n${dupNames.join('\n')}\n\n이분들은 빼고 나머지 ${rest.length}명만 저장할까요?`)) {
+          alert('이미 등록되어 있어 다시 제출할 필요가 없습니다.\n수정이 필요하면 해당 신청서를 제출한 분이 다시 제출해 주세요.');
           $('submit').disabled = false; $('submit').textContent = '완료'; return;
         }
         members.length = 0; members.push(...rest); body.members = members;
         if (body.name !== members[0].name) body.name = members[0].name; // 본인이 빠졌으면 첫 사람을 신청자로
+      } else {
+        for (const x of dupList) x.m.distinct = true; // 동명이인 표시 → 관리자 중복 정리에서 합치지 않음
       }
     }
-    if (dup > 0) {
-      if (!confirm(`${body.name}님은 이미 제출된 신청이 있습니다.\n기존 신청을 지우고 이번 내용으로 교체할까요?`)) {
-        $('submit').disabled = false; $('submit').textContent = '완료'; return;
-      }
-      res = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/replace_submission', { method: 'POST', headers: H, body: JSON.stringify({ p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members }) });
+    if (replaceId) {
+      res = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/replace_submission_by_id', { method: 'POST', headers: H, body: JSON.stringify({ p_id: replaceId, p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members }) });
     } else {
       res = await fetch(CFG.SUPABASE_URL + '/rest/v1/submissions', { method: 'POST', headers: H, body: JSON.stringify(body) });
     }
