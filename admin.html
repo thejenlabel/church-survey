@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css?v=22">
+<link rel="stylesheet" href="style.css?v=23">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -17,7 +17,7 @@
   <div class="card" id="loginCard">
     <label>관리자 비밀번호</label>
     <div class="topbar">
-      <input id="pw" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+      <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password" autofocus>
       <button class="btn" id="login">입장</button>
     </div>
     <div class="err" id="err"></div>
@@ -44,9 +44,10 @@
     </div>
     <div id="listView">
     <div class="card">
-      <div class="filters">
-        <div><label>세부소속 (순장·리더·교사)</label><select id="fSub"><option value="">마스터 · 전체 보기</option></select></div>
+      <div class="filters three">
+        <div><label>소속별 보기</label><select id="fSub"><option value="">전체 보기</option></select></div>
         <div><label>이름 검색</label><input id="fName" placeholder="이름 일부 입력"></div>
+        <div><label>정렬</label><select id="fSort"><option value="time|-1">최근 제출 순</option><option value="name|1">신청자 이름순</option><option value="sub|1">세부소속순</option><option value="meal|-1">식사 인원 많은 순</option><option value="bus|-1">교회차 인원 많은 순</option></select></div>
       </div>
     </div>
 
@@ -61,10 +62,10 @@
   </div>
 </div>
 
-<script src="config.js?v=18"></script>
+<script src="config.js?v=19"></script>
 <script>
 const $ = id => document.getElementById(id);
-$('title').textContent = CFG.TITLE + ' — 관리';
+$('title').textContent = CFG.TITLE + ' · 관리';
 let DATA = [], PW = sessionStorage.getItem('pw') || '';
 if (PW) $('pw').value = PW;
 
@@ -159,8 +160,10 @@ const SORT_VAL = {
 document.querySelectorAll('th.sortable').forEach(th => th.onclick = () => {
   const k = th.dataset.sort;
   SORT = SORT.key === k ? { key: k, dir: -SORT.dir } : { key: k, dir: (k === 'meal' || k === 'bus' || k === 'time') ? -1 : 1 };
+  const opt = [...$('fSort').options].find(o => o.value === `${SORT.key}|${SORT.dir}`); if (opt) $('fSort').value = opt.value;
   render();
 });
+$('fSort').onchange = () => { const [k, d] = $('fSort').value.split('|'); SORT = { key: k, dir: +d }; render(); };
 function applySort(list) {
   const v = SORT_VAL[SORT.key];
   return list.slice().sort((a, b) => { const x = v(a), y = v(b); return (x > y ? 1 : x < y ? -1 : 0) * SORT.dir; });

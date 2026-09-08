@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=23">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 </head>
@@ -13,12 +13,12 @@
   <button class="back" id="backTop" hidden>← 뒤로</button>
   <img src="logo.png" alt="이음교회" class="logo">
   <h1 id="title"></h1>
-  <p class="sub" id="stepText">1단계 · 본인 정보</p>
+  <div class="steps" id="steps"><span class="st on">1 본인 정보</span><span class="st">2 참석 인원</span></div>
 
   <!-- 1단계 -->
   <div class="card" id="step1">
     <label>이름</label>
-    <input id="name" placeholder="홍길동 (띄어쓰기 없이)" autocomplete="name">
+    <input id="name" placeholder="홍길동" autocomplete="name" autofocus>
     <label>소속</label>
     <select id="group"><option value="">선택하세요</option></select>
     <div id="subWrap" hidden>
@@ -31,8 +31,7 @@
 
   <!-- 2단계 -->
   <div class="card" id="step2" hidden>
-    <p style="margin:0 0 4px;font-weight:700">본인 포함 온가족 예배 참석 여부</p>
-    <p class="hint" style="margin:0 0 14px">본인 포함, 함께 참석하는 가족 이름을 모두 적어 주세요.</p>
+    <p style="margin:0 0 14px;font-weight:700">본인 포함, 함께 참석하는 가족을 모두 적어 주세요</p>
     <div id="members"></div>
     <button class="btn ghost" id="add">+ 인원 추가</button>
     <div class="err" id="err2"></div>
@@ -43,7 +42,7 @@
   <div class="card ok" id="done" hidden>
     <div class="big">✅</div>
     <p style="font-weight:700;font-size:18px;margin:8px 0">제출되었습니다</p>
-    <p class="hint" id="summary"></p>
+    <div class="hint" id="summary" style="text-align:left"></div>
     <button class="btn" onclick="location.reload()">완료</button>
   </div>
 </div>
@@ -55,7 +54,7 @@
   </div>
 </div>
 
-<script src="config.js?v=18"></script>
+<script src="config.js?v=19"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
@@ -65,6 +64,7 @@ document.addEventListener('input', e => {
   if (e.target.matches('.m-birth')) { const d = CFG.kidDept(e.target.value); const tag = e.target.parentElement.querySelector('.dept'); if (tag) tag.textContent = d ? d + ' (생년 기준 자동)' : ''; }
 });
 $('title').textContent = CFG.TITLE;
+function setStep(n) { const st = document.querySelectorAll('#steps .st'); st.forEach((el, i) => { el.classList.toggle('on', i + 1 === n); el.classList.toggle('done', i + 1 < n); }); $('steps').hidden = n === 3; }
 document.title = CFG.TITLE;
 
 // 선택형 안내창: choose(메시지, [{label, value, primary}]) → Promise<value>
@@ -98,18 +98,23 @@ $('group').addEventListener('change', () => {
 function addMember(name = '', isSelf = false) {
   const d = document.createElement('div');
   d.className = 'member';
+  const seg = (cls, opts) => `<input type="hidden" class="${cls}"><div class="seg">${opts.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('')}</div>`;
   d.innerHTML = `
-    <h4>${isSelf ? '본인' : '동반 가족'}</h4>
-    ${isSelf ? '' : '<button class="rm" title="삭제">×</button>'}
+    <div class="member-h"><h4>${isSelf ? '본인' : '동반 가족'}</h4>${isSelf ? '' : '<button type="button" class="rm" aria-label="삭제">삭제</button>'}</div>
     <div class="row">
-      <div><label>이름</label><input class="m-name" placeholder="이름"></div>
-      <div><label>생년 (4자리)</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980"><div class="dept hint"></div></div>
-      <div><label>전화번호</label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="숫자만 입력 (대시 자동)"></div>
-      <div></div>
-      <div><label>식사 여부</label><select class="m-meal"><option value="">선택</option>${CFG.MEAL.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>
-      <div><label>교회 차량</label><select class="m-bus"><option value="">선택</option>${CFG.BUS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>
+      <div><label>이름</label><input class="m-name" placeholder="이름" autocomplete="off"></div>
+      <div><label>생년 (4자리)${isSelf ? ' <em>필수</em>' : ''}</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><div class="dept hint"></div></div>
+      <div><label>전화번호${isSelf ? ' <em>필수</em>' : ''}</label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="01012345678" autocomplete="off"></div>
+      <div class="row-gap"></div>
+      <div><label>식사</label>${seg('m-meal', CFG.MEAL)}</div>
+      <div><label>교회 차량</label>${seg('m-bus', CFG.BUS)}</div>
     </div>`;
   d.querySelector('.m-name').value = name;
+  d.querySelectorAll('.seg').forEach(g => g.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    g.previousElementSibling.value = b.dataset.v;
+  }));
   $('members').appendChild(d);
   const rm = d.querySelector('.rm'); if (rm) rm.onclick = () => d.remove();
 }
@@ -117,18 +122,18 @@ function addMember(name = '', isSelf = false) {
 $('next').onclick = () => {
   const name = $('name').value.replace(/\s+/g, ''), g = $('group').value;
   const needSub = CFG.hasSub(g);
-  if (!name) return $('err1').textContent = '이름을 입력해 주세요.';
-  if (!g) return $('err1').textContent = '소속을 선택해 주세요.';
-  if (needSub && !$('sub').value) return $('err1').textContent = '세부소속을 선택해 주세요.';
+  if (!name) { $('err1').textContent = '이름을 입력해 주세요.'; $('name').focus(); return; }
+  if (!g) { $('err1').textContent = '소속을 선택해 주세요.'; $('group').focus(); return; }
+  if (needSub && !$('sub').value) { $('err1').textContent = '세부소속을 선택해 주세요.'; $('sub').focus(); return; }
   $('err1').textContent = '';
   $('members').innerHTML = '';
   addMember(name, true);
   $('step1').hidden = true; $('step2').hidden = false; $('backTop').hidden = false;
-  $('stepText').textContent = '2단계 · 참석 인원';
+  setStep(2);
   window.scrollTo(0, 0);
 };
 $('add').onclick = () => addMember();
-function goStep1() { $('step2').hidden = true; $('done').hidden = true; $('step1').hidden = false; $('stepText').textContent = '1단계 · 본인 정보'; $('backTop').hidden = true; }
+function goStep1() { $('step2').hidden = true; $('done').hidden = true; $('step1').hidden = false; setStep(1); $('backTop').hidden = true; }
 $('backTop').onclick = () => { if (!$('done').hidden) location.reload(); else goStep1(); };
 
 $('submit').onclick = async () => {
@@ -145,8 +150,11 @@ $('submit').onclick = async () => {
     // 아무것도 안 적은 동반 칸은 건너뜀(인원 추가만 누르고 안 쓴 경우)
     const isSelf = r === rows[0];
     if (!isSelf && !m.name && !m.birth_year && !m.phone && m.meal === '' && m.bus === '') { r.remove(); continue; }
-    if (!m.name) return $('err2').textContent = '이름이 비어 있는 칸이 있습니다.';
-    if (m.meal === '' || m.bus === '') return $('err2').textContent = `${m.name}님의 식사·차량 여부를 선택해 주세요.`;
+    const fail = msg => { $('err2').textContent = msg; $('err2').scrollIntoView({ block: 'center', behavior: 'smooth' }); return true; };
+    if (!m.name) return fail('이름이 비어 있는 칸이 있습니다.');
+    if (isSelf && !/^\d{4}$/.test(m.birth_year)) return fail('본인 생년 4자리를 입력해 주세요.');
+    if (isSelf && CFG.phoneTail(m.phone).length < 8) return fail('본인 전화번호를 입력해 주세요.');
+    if (m.meal === '' || m.bus === '') return fail(`${m.name}님의 식사·차량을 선택해 주세요.`);
     m.meal = +m.meal; m.bus = +m.bus;
     members.push(m);
   }
@@ -201,7 +209,7 @@ $('submit').onclick = async () => {
         }
         updated = dupList.map(x => x.m);
         if (!rest.length) {
-          $('step2').hidden = true; $('done').hidden = false; $('stepText').textContent = '완료';
+          $('step2').hidden = true; $('done').hidden = false; setStep(3);
           $('summary').textContent = `${updated.map(m => m.name).join(', ')}님의 식사·차량 정보를 수정했습니다.`;
           window.scrollTo(0, 0); return;
         }
@@ -215,9 +223,10 @@ $('submit').onclick = async () => {
       res = await fetch(CFG.SUPABASE_URL + '/rest/v1/submissions', { method: 'POST', headers: H, body: JSON.stringify(body) });
     }
     if (!res.ok) throw new Error(await res.text());
-    $('step2').hidden = true; $('done').hidden = false; $('stepText').textContent = '완료';
+    $('step2').hidden = true; $('done').hidden = false; setStep(3);
     const meal = members.filter(m => m.meal).length, bus = members.filter(m => m.bus).length;
-    $('summary').textContent = `${body.name} 외 ${members.length - 1}명 · 총 ${members.length}명 참석 · 식사 ${meal}명 · 교회차 ${bus}명` + (updated.length ? ` (${updated.map(m => m.name).join(', ')}님은 기존 정보 수정)` : '');
+    $('summary').innerHTML = `<b>총 ${members.length}명 참석</b> · 식사 ${meal}명 · 교회차 ${bus}명` + (updated.length ? `<br><small>${updated.map(m => m.name).join(', ')}님은 기존 정보를 수정했습니다</small>` : '')
+      + `<ul class="done-list">${members.map(m => `<li>${m.name}${m.birth_year ? ' (' + m.birth_year + ')' : ''} — ${m.meal ? '식사함' : '식사안함'} · ${m.bus ? '교회차량' : '차량불필요'}</li>`).join('')}</ul>`;
     window.scrollTo(0, 0);
   } catch (e) {
     $('err2').textContent = '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.';

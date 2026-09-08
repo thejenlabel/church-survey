@@ -78,3 +78,20 @@ th.sortable:hover{text-decoration:underline}
 .rider .r-name{grid-area:name;font-size:16px;font-weight:600}.rider .r-name small{color:#6b7280;font-weight:400}
 .rider .r-phone{grid-area:phone;font-size:14px;color:#374151}
 .rider .r-sub{grid-area:sub;font-size:12px;color:#9ca3af}
+
+/* 전수조사 반영 */
+.steps{display:flex;gap:6px;margin:0 0 16px}
+.st{flex:1;text-align:center;font-size:13px;font-weight:600;color:#9ca3af;padding:7px 4px;border-radius:8px;background:#e9edf5}
+.st.on{background:#2E3A8C;color:#fff}.st.done{background:#c9d3ec;color:#2E3A8C}
+label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
+.member-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.member h4{margin:0}
+.member .rm{position:static;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#6b7280;font-size:13px;padding:6px 12px;cursor:pointer}
+.row-gap{display:block}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg button{font:inherit;font-size:15px;padding:11px 6px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;cursor:pointer}
+.seg button.on{background:#2E3A8C;border-color:#2E3A8C;color:#fff;font-weight:700}
+.done-list{list-style:none;padding:0;margin:14px 0 0;font-size:14px;color:#374151;border-top:1px solid #eef0f3}
+.done-list li{padding:8px 0;border-bottom:1px solid #eef0f3}
+.filters.three{grid-template-columns:1.2fr 1fr 1fr}
+@media (max-width:600px){.filters.three{grid-template-columns:1fr}.row-gap{display:none}}
