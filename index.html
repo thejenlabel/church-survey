@@ -15,7 +15,7 @@
   <!-- 1단계 -->
   <div class="card" id="step1">
     <label>이름</label>
-    <input id="name" placeholder="홍길동" autocomplete="name">
+    <input id="name" placeholder="홍길동 (띄어쓰기 없이)" autocomplete="name">
     <label>소속</label>
     <select id="group"><option value="">선택하세요</option></select>
     <div id="secWrap" hidden>
@@ -52,6 +52,10 @@
 <script src="config.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+// 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
+document.addEventListener('input', e => {
+  if (e.target.matches('#name, .m-name') && /\s/.test(e.target.value)) e.target.value = e.target.value.replace(/\s+/g, '');
+});
 $('title').textContent = CFG.TITLE;
 document.title = CFG.TITLE;
 
@@ -104,7 +108,7 @@ function addMember(name = '', isSelf = false) {
 }
 
 $('next').onclick = () => {
-  const name = $('name').value.trim(), g = $('group').value;
+  const name = $('name').value.replace(/\s+/g, ''), g = $('group').value;
   const needSub = CFG.hasSub(g);
   if (!name) return $('err1').textContent = '이름을 입력해 주세요.';
   if (!g) return $('err1').textContent = '소속을 선택해 주세요.';
@@ -126,7 +130,7 @@ $('submit').onclick = async () => {
   const members = [];
   for (const r of rows) {
     const m = {
-      name: r.querySelector('.m-name').value.trim(),
+      name: r.querySelector('.m-name').value.replace(/\s+/g, ''),
       birth_year: r.querySelector('.m-birth').value.trim(),
       phone: r.querySelector('.m-phone').value.trim(),
       meal: r.querySelector('.m-meal').value,
@@ -143,7 +147,7 @@ $('submit').onclick = async () => {
   $('err2').textContent = '';
   $('submit').disabled = true; $('submit').textContent = '저장 중…';
   const g = $('group').value;
-  const body = { name: $('name').value.trim(), group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
+  const body = { name: $('name').value.replace(/\s+/g, ''), group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
   try {
     // 같은 이름·소속으로 이미 제출됐는지 확인
