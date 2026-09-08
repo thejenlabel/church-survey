@@ -54,3 +54,11 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .modal-btns .btn{margin:0;width:100%}
 .logo{display:block;height:44px;width:auto;margin:6px 0 10px}
 #nl-badge-frame,#nl-hud-frame{display:none!important}
+.kids{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kid{border:1px solid #dfe4f0;border-radius:10px;padding:10px 12px;background:#f7f9fd}
+.kid.sum{background:#e9eef8}
+.kid-l{font-size:13px;font-weight:700;color:#2E3A8C}.kid-l small{display:block;font-weight:400;color:#6b7280;font-size:11px}
+.kid-n{font-size:24px;font-weight:800;color:#2E3A8C;margin:4px 0 2px}.kid-n small{font-size:12px;font-weight:600;margin-left:2px}
+.kid-s{font-size:12px;color:#6b7280}
+.badge.kidb{background:#fff3e0;color:#9a5b00}
+@media (max-width:700px){.kids{grid-template-columns:repeat(2,1fr)}}

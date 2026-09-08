@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 </head>
@@ -55,13 +55,14 @@
   </div>
 </div>
 
-<script src="config.js?v=12"></script>
+<script src="config.js?v=13"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
 document.addEventListener('input', e => {
   if (e.target.matches('#name, .m-name') && /\s/.test(e.target.value)) e.target.value = e.target.value.replace(/\s+/g, '');
   if (e.target.matches('.m-phone')) { const f = CFG.fmtPhone(e.target.value); if (f !== e.target.value) e.target.value = f; }
+  if (e.target.matches('.m-birth')) { const d = CFG.kidDept(e.target.value); const tag = e.target.parentElement.querySelector('.dept'); if (tag) tag.textContent = d ? d + ' (생년 기준 자동)' : ''; }
 });
 $('title').textContent = CFG.TITLE;
 document.title = CFG.TITLE;
@@ -102,7 +103,7 @@ function addMember(name = '', isSelf = false) {
     ${isSelf ? '' : '<button class="rm" title="삭제">×</button>'}
     <div class="row">
       <div><label>이름</label><input class="m-name" placeholder="이름"></div>
-      <div><label>생년 (4자리)</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980"></div>
+      <div><label>생년 (4자리)</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980"><div class="dept hint"></div></div>
       <div><label>전화번호</label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="숫자만 입력 (대시 자동)"></div>
       <div></div>
       <div><label>식사 여부</label><select class="m-meal"><option value="">선택</option>${CFG.MEAL.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>

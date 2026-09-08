@@ -51,3 +51,14 @@ CFG.samePerson = function (a, b) {
   const ya = String(a.birth_year || '').trim(), yb = String(b.birth_year || '').trim();
   return !!ya && !!yb && ya === yb;
 };
+
+// ---- 자녀 부서(생년 기준) — 부모가 동반으로 신청, 전체 집계 포함 + 별도 표시 ----
+CFG.KIDS = [
+  { label: "초등부", from: 2014, to: 2019 },
+  { label: "유치부", from: 2020, to: 2023 },
+  { label: "영유아부", from: 2024, to: 2026 }
+];
+CFG.kidDept = function (birth_year) {
+  const y = parseInt(String(birth_year || '').trim(), 10); if (!y) return '';
+  const k = CFG.KIDS.find(k => y >= k.from && y <= k.to); return k ? k.label : '';
+};

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -27,6 +27,10 @@
 
   <div id="app" hidden>
     <div class="stats" id="stats"></div>
+    <div class="card" id="kidsCard" hidden>
+      <label style="margin-top:0">자녀 부서별 (전체 집계에 포함된 인원을 생년 기준으로 따로 표시)</label>
+      <div class="kids" id="kids"></div>
+    </div>
 
     <div class="card">
       <div class="filters">
@@ -46,7 +50,7 @@
   </div>
 </div>
 
-<script src="config.js?v=12"></script>
+<script src="config.js?v=13"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').textContent = CFG.TITLE + ' — 관리';
@@ -157,6 +161,18 @@ function render() {
        <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`;
 
+  // 자녀 부서별 집계(같은 사람 1명으로)
+  const kid = {}; for (const k of CFG.KIDS) kid[k.label] = { seen: new Set(), n: 0, meal: 0, bus: 0 };
+  for (const s of list) for (const m of s.members) {
+    const dpt = CFG.kidDept(m.birth_year); if (!dpt) continue;
+    const key = idOf(m); if (kid[dpt].seen.has(key)) continue; kid[dpt].seen.add(key);
+    kid[dpt].n++; if (m.meal) kid[dpt].meal++; if (m.bus) kid[dpt].bus++;
+  }
+  const kidTotal = Object.values(kid).reduce((a, k) => a + k.n, 0);
+  $('kidsCard').hidden = false;
+  $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}<small>${k.from}~${k.to}년생</small></div><div class="kid-n">${kid[k.label].n}<small>명</small></div><div class="kid-s">식사 ${kid[k.label].meal} · 교회차 ${kid[k.label].bus}</div></div>`).join('')
+    + `<div class="kid sum"><div class="kid-l">자녀 합계</div><div class="kid-n">${kidTotal}<small>명</small></div><div class="kid-s">성인 ${total - kidTotal}명</div></div>`;
+
   const dup = nameCounts();
   $('rows').innerHTML = list.map(s => `<tr>
     <td><b>${esc(s.name)}</b></td>
@@ -165,7 +181,7 @@ function render() {
     <td>${s.members.length}</td>
     <td>${s.members.filter(m => m.meal).length}</td>
     <td>${s.members.filter(m => m.bus).length}</td>
-    <td>${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.distinct ? ' <span class="badge">동명이인</span>' : ''}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
+    <td>${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''}${CFG.kidDept(m.birth_year) ? ' <span class="badge kidb">' + CFG.kidDept(m.birth_year) + '</span>' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
     <td style="white-space:nowrap;font-size:12px;color:#6b7280">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
     <td><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
@@ -174,7 +190,7 @@ function render() {
   $('cards').innerHTML = list.map(s => `<div class="scard">
     <div class="scard-h"><b>${esc(s.name)}</b><span class="hint">${esc(s.sub_group) || esc(s.group_type)}</span></div>
     <div class="scard-n">총 ${s.members.length}명 · 식사 ${s.members.filter(m => m.meal).length} · 교회차 ${s.members.filter(m => m.bus).length}</div>
-    ${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.distinct ? ' <span class="badge">동명이인</span>' : ''}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
+    ${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''}${CFG.kidDept(m.birth_year) ? ' <span class="badge kidb">' + CFG.kidDept(m.birth_year) + '</span>' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
     <div class="scard-f"><span class="hint">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
 }
@@ -200,7 +216,7 @@ $('excel').onclick = () => {
     return r;
   });
   // 시트2: 개인별 전체 명단
-  const s2 = DATA.flatMap(s => s.members.map((m, i) => ({ 이름: m.name, 구분: i === 0 ? '본인' : '동반', 신청자: s.name, 소속: s.group_type, 세부소속: s.sub_group, 생년: m.birth_year || '', 전화번호: m.phone || '', '식사(0/1)': m.meal ? 1 : 0, '교회차(0/1)': m.bus ? 1 : 0 })));
+  const s2 = DATA.flatMap(s => s.members.map((m, i) => ({ 이름: m.name, 구분: i === 0 ? '본인' : '동반', 부서: CFG.kidDept(m.birth_year), 신청자: s.name, 소속: s.group_type, 세부소속: s.sub_group, 생년: m.birth_year || '', 전화번호: m.phone || '', '식사(0/1)': m.meal ? 1 : 0, '교회차(0/1)': m.bus ? 1 : 0 })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s1), '신청자별');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s2), '전체명단');
