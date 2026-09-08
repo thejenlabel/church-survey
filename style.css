@@ -47,15 +47,7 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 
 /* 관리자 모바일 카드 */
 .cards{display:none}
-.scard{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 14px;margin-bottom:8px}
-.scard-h{display:flex;align-items:center;gap:10px;font-size:16px}
-.scard-h b{font-size:16px;white-space:nowrap}
-.scard-g{flex:1;min-width:0;font-size:13px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
-.scard-h .btn.danger{margin-left:auto}
-.scard-n{font-size:13px;color:#4A63A9;font-weight:600;margin:2px 0 6px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.scard-t{color:#9ca3af;font-weight:400;font-size:12px;white-space:nowrap}
-.scard .mem{border-top:1px solid #f1f3f8;padding:4px 0}
-@media (max-width:1000px){.cards{display:block}.tbl{display:none}.mem{grid-template-columns:minmax(0,1fr) 60px 56px 56px 120px}.wrap.wide{max-width:720px}}
+@media (max-width:1000px){.cards{display:block}.tbl{display:none}.wrap.wide{max-width:720px}}
 @media (max-width:700px){
   .wrap.wide{padding:12px 12px 40px}
   .logo{height:30px;margin:0 0 6px}
@@ -67,10 +59,6 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
   .kids{grid-template-columns:repeat(4,1fr);gap:6px}.kid{padding:6px 4px;text-align:center}.kid-l{font-size:11px}.kid-l small{display:inline;margin-left:2px}.kid-n{font-size:18px;margin:2px 0 0}.kid-s{font-size:10px}
   .filters.three{grid-template-columns:1fr 1fr;gap:6px}.filters .span2{grid-column:1/-1}
   .filters select,.filters input{padding:9px 10px;font-size:14px}
-  .scard{padding:10px 12px}
-  .scard-h b{font-size:15px}.scard-g{font-size:12px}
-  .scard-n{font-size:12px}
-  .mem{grid-template-columns:minmax(0,1fr) 52px 48px 48px 100px;font-size:12px;gap:4px;padding:3px 0;border-top:1px solid #f1f3f8}
   .mem .c-phone{font-size:11px}.badge{font-size:10px;padding:1px 5px}
   .btn.danger{padding:4px 8px;font-size:12px}
 }
@@ -124,3 +112,25 @@ label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
 .c-bus .badge:not(.no){background:#0f7b4f;color:#fff}
 .badge.no{background:#fff;border:1px solid #d1d5db;color:#9ca3af}
 .btn.danger{white-space:nowrap}
+
+/* ===== 신청 카드 격자 (카드 모드 공통) =====
+   사방 여백 14 · 열 간격 8 · 행 높이 32 · 오른쪽 끝선 = 삭제/시각/전화 */
+.scard{background:#fff;border:1px solid #dfe4f0;border-radius:12px;padding:14px;margin-bottom:8px}
+.scard-h{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:8px;height:32px}
+.scard-h b{font-size:16px;font-weight:700;white-space:nowrap;line-height:32px}
+.scard-g{font-size:13px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:32px}
+.scard-h .btn.danger{height:28px;padding:0 10px;line-height:26px;font-size:12px}
+.scard-n{display:grid;grid-template-columns:1fr auto;align-items:center;height:28px;font-size:13px;color:#2E3A8C;font-weight:600;border-bottom:1px solid #eef0f3;margin-bottom:4px}
+.scard-t{font-size:12px;color:#9ca3af;font-weight:400;white-space:nowrap}
+.scard .mem{display:grid;grid-template-columns:minmax(0,1fr) 60px 52px 52px 112px;column-gap:8px;align-items:center;height:32px;padding:0;border:0;font-size:13px}
+.scard .mem .c-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:#1c1f24}
+.scard .mem .c-name small{color:#6b7280;font-size:12px}
+.scard .mem .c-dept,.scard .mem .c-meal,.scard .mem .c-bus{display:flex;justify-content:center}
+.scard .mem .badge{width:100%;text-align:center;margin:0;padding:3px 0;font-size:11px;line-height:1.4}
+.scard .mem .c-phone{text-align:right;font-size:13px;color:#374151;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:700px){
+  .scard{padding:12px}
+  .scard-h b{font-size:15px}.scard-g{font-size:12px}
+  .scard .mem{grid-template-columns:minmax(0,1fr) 52px 46px 46px 100px;column-gap:6px;height:30px;font-size:12px}
+  .scard .mem .c-name{font-size:13px}.scard .mem .c-phone{font-size:12px}
+}
