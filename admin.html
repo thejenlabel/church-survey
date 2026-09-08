@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=37">
+<link rel="stylesheet" href="style.css?v=38">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -194,7 +194,7 @@ function render() {
   const rawCount = list.reduce((a, s) => a + s.members.length, 0);
   const total = people.length, meal = people.filter(m => m.meal).length, bus = people.filter(m => m.bus).length;
   const mealYoung = people.filter(m => m.meal && m.young).length, mealOlder = meal - mealYoung;
-  const mealTile = `<div class="stat stat-split"><div class="n">${meal}</div><div class="l">식사 인원</div><div class="sub"><span>초등생 이상 <b>${mealOlder}</b></span><span class="dot"></span><span>유치부·영유아부 <b>${mealYoung}</b></span></div></div>`;
+  const mealTile = `<div class="stat stat-split"><div class="n">${meal}</div><div class="l">식사 인원</div><div class="sub"><div><span>초등생 이상</span><b>${mealOlder}</b></div><div><span>유치부·영유아부</span><b>${mealYoung}</b></div></div></div>`;
   const excluded = people.filter(m => m.ex).length;
   const dupNote = rawCount > total ? ` · 중복 ${rawCount - total}명 제외` : '';
   const direct = list.length; // 세부소속 본인(신청자) 수
