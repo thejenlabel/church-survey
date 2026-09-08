@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="style.css?v=30">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -22,9 +22,12 @@
     <div class="err" id="err"></div>
   </div>
   <div class="card" id="toolbar" hidden>
-    <div class="topbar">
-      <button class="btn" id="busToggle">차량 탑승자 확인</button>
-      <button class="btn" id="excel">전체 명단 엑셀 다운로드</button>
+    <div class="tabs">
+      <button class="tab on" id="tabList">전체 명단</button>
+      <button class="tab" id="tabBus">차량 탑승자 확인</button>
+    </div>
+    <div class="topbar sub-actions">
+      <button class="btn ghost" id="excel">엑셀 다운로드</button>
       <button class="btn ghost" id="reload">새로고침</button>
     </div>
     <div class="hint" id="notice"></div>
@@ -270,12 +273,13 @@ $('busList').addEventListener('change', async e => {
   try { await rpc('admin_set_checkin', { pw: PW, p_key: key, p_checked: val }); }
   catch (err) { CHECK[key] = !val; renderBus(); alert('저장 실패: ' + err.message); }
 });
-$('busToggle').onclick = () => {
-  const show = $('busView').hidden;
-  $('busView').hidden = !show; $('listView').hidden = show; $('stats').hidden = show; $('kidsCard').hidden = show;
-  $('busToggle').textContent = show ? '전체 명단으로 돌아가기' : '차량 탑승자 확인';
-  if (show) renderBus();
-};
+function showView(bus) {
+  $('busView').hidden = !bus; $('listView').hidden = bus; $('stats').hidden = bus; $('kidsCard').hidden = bus;
+  $('tabList').classList.toggle('on', !bus); $('tabBus').classList.toggle('on', bus);
+  if (bus) renderBus();
+}
+$('tabList').onclick = () => showView(false);
+$('tabBus').onclick = () => showView(true);
 $('excel').onclick = async () => {
   const OX = v => v ? 'O' : 'X';
   const fmtTime = t => new Date(t).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
