@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=45">
+<link rel="stylesheet" href="style.css?v=46">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -246,9 +246,11 @@ function render() {
   // 명단 한 줄: 이름(생년) | 부서 | 식사 | 차량 | 전화 — 열 고정으로 줄 맞춤
   const SID = new Map(); for (const s of DATA) for (const m of s.members) SID.set(m, s.id);
   const sidOf = m => SID.get(m) || '';
+  const SUBM = new Map(); for (const s of DATA) for (const m of s.members) SUBM.set(m, keyOf(m.name) === keyOf(s.name));
+  const isSubmitter = m => !!SUBM.get(m); // 신청자 본인은 × 없음 — 소속 정보가 신청자에게 묶여 있어 신청서 전체 삭제로만
   const memHtml = m => {
     const dpt = CFG.kidDept(m.birth_year);
-    return `<span class="mem"><span class="c-name">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' <small>(' + esc(m.birth_year) + ')</small>' : ''}</span><span class="c-dept">${dpt ? '<span class="badge kidb">' + dpt + '</span>' : ''}</span><span class="c-meal"><span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span></span><span class="c-bus"><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span></span><span class="c-phone">${m.phone ? esc(m.phone) : ''}</span><button class="rm-m" data-sid="${sidOf(m)}" data-mname="${esc(m.name)}" aria-label="이 사람 삭제">×</button></span>`;
+    return `<span class="mem"><span class="c-name">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' <small>(' + esc(m.birth_year) + ')</small>' : ''}</span><span class="c-dept">${dpt ? '<span class="badge kidb">' + dpt + '</span>' : ''}</span><span class="c-meal"><span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span></span><span class="c-bus"><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span></span><span class="c-phone">${m.phone ? esc(m.phone) : ''}</span>${isSubmitter(m) ? '<span class="rm-m ph" title="신청자는 오른쪽 삭제로 신청서 전체를 지웁니다"></span>' : `<button class="rm-m" data-sid="${sidOf(m)}" data-mname="${esc(m.name)}" aria-label="이 사람 삭제">×</button>`}</span>`;
   };
   $('rows').innerHTML = list.map(s => `<tr>
     <td><b>${esc(s.name)}</b></td>
@@ -277,6 +279,7 @@ document.addEventListener('click', async e => {
   if (rm) {
     const s = DATA.find(x => x.id === rm.dataset.sid); if (!s) return;
     const name = rm.dataset.mname;
+    if (keyOf(name) === keyOf(s.name)) { notify('신청자 본인은 오른쪽 「삭제」로 신청서 전체를 삭제해 주세요.'); return; }
     if (s.members.length <= 1) { if (!await ask(`${name}님이 이 신청서의 유일한 참석자입니다.\n신청서 전체를 삭제할까요?`, '신청서 삭제')) return;
       try { await rpc('admin_delete', { pw: PW, target: s.id }); DATA = DATA.filter(x => x.id !== s.id); render(); } catch (err) { notify('삭제 실패: ' + err.message); } return; }
     if (!await ask(`${name}님을 ${s.name}님 신청서에서 삭제할까요?`)) return;

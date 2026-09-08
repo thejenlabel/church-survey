@@ -259,3 +259,5 @@ body{background:#f7f8fb}
 @media (max-width:700px){.rm-m{width:22px;height:22px;font-size:14px}}
 
 .btn.red{background:#dc2626}
+
+.rm-m.ph{border:0;background:none;cursor:default}
