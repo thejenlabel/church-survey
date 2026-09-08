@@ -53,3 +53,4 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .modal-btns{display:flex;flex-direction:column;gap:8px}
 .modal-btns .btn{margin:0;width:100%}
 .logo{display:block;height:44px;width:auto;margin:6px 0 10px}
+#nl-badge-frame,#nl-hud-frame{display:none!important}
