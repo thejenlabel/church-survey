@@ -50,7 +50,7 @@
   </div>
 </div>
 
-<script src="config.js?v=13"></script>
+<script src="config.js?v=14"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').textContent = CFG.TITLE + ' — 관리';
@@ -145,20 +145,22 @@ function render() {
   buildIdentity();
   const seen = new Map();
   for (const s of list) for (const m of s.members) {
-    const k = idOf(m); const prev = seen.get(k) || { meal: 0, bus: 0 };
-    seen.set(k, { meal: prev.meal || m.meal, bus: prev.bus || m.bus });
+    const k = idOf(m); const prev = seen.get(k) || { meal: 0, bus: 0, mealEx: 0 };
+    seen.set(k, { meal: prev.meal || (m.meal && CFG.mealCounts(m) ? 1 : 0), bus: prev.bus || m.bus, mealEx: prev.mealEx || (m.meal && !CFG.mealCounts(m) ? 1 : 0) });
   }
   const people = [...seen.values()];
   const rawCount = list.reduce((a, s) => a + s.members.length, 0);
   const total = people.length, meal = people.filter(m => m.meal).length, bus = people.filter(m => m.bus).length;
+  const mealEx = people.filter(m => m.mealEx).length;
+  const mealNote = CFG.MEAL_EXCLUDE_BIRTH_FROM ? ` (${CFG.MEAL_EXCLUDE_BIRTH_FROM}년생 이후 ${mealEx}명 제외)` : '';
   const dupNote = rawCount > total ? ` · 중복 ${rawCount - total}명 제외` : '';
   const direct = list.length; // 세부소속 본인(신청자) 수
   $('stats').innerHTML = fg
     ? `<div class="stat"><div class="n">${direct}<span style="font-size:14px;color:#6b7280"> / ${total}</span></div><div class="l">참석인원(소속 본인) / 총인원(가족 포함${dupNote})</div></div>
-       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
+       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원${mealNote}</div></div>
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`
     : `<div class="stat"><div class="n">${total}</div><div class="l">총 참석 인원 (신청 ${direct}건${dupNote})</div></div>
-       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
+       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원${mealNote}</div></div>
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`;
 
   // 자녀 부서별 집계(같은 사람 1명으로)
@@ -166,7 +168,7 @@ function render() {
   for (const s of list) for (const m of s.members) {
     const dpt = CFG.kidDept(m.birth_year); if (!dpt) continue;
     const key = idOf(m); if (kid[dpt].seen.has(key)) continue; kid[dpt].seen.add(key);
-    kid[dpt].n++; if (m.meal) kid[dpt].meal++; if (m.bus) kid[dpt].bus++;
+    kid[dpt].n++; if (m.meal && CFG.mealCounts(m)) kid[dpt].meal++; if (m.bus) kid[dpt].bus++;
   }
   const kidTotal = Object.values(kid).reduce((a, k) => a + k.n, 0);
   $('kidsCard').hidden = false;

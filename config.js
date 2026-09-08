@@ -12,8 +12,8 @@ window.CFG = {
     "직장(남)": { hint: "순장 선택", items: ["직장1남 (정해일)","직장2남 (김한얼)","직장3남 (신동호)","직장4남 (이주흥)","직장5남 (이승헌)","직장6남 (오종흥)","직장7남 (이철환)","직장8남 (설준희)","직장9남 (김재민)","직장10남 (원현진)","직장11남 (정원호)"] },
     "부부·신혼·젊은장년": { hint: "순장 선택", items: ["부부1 (최윤성, 김수진)","부부2 (한성필)","신혼부부 (윤재동, 박효실)","젊은 장년 공동체 (이재욱)"] },
     "대학청년부": { hint: "리더이름 선택", items: ["곽주훈 리더","윤시온 리더","이민진 리더","이인혜 리더","김예지 리더","하정주 리더","정소진 리더","박수빈 리더"] },
-    "고등부(엘피스)": { hint: "반 - 선생님 선택", items: ["1반-오수근A","2반-양유진","3반-노원혁","4반-김규성","5반 이원중"] },
-    "중등부(아가페)": { hint: "반 - 선생님 선택", items: ["1반-조주원","2반-이은경","3반-장지연","4반-김용진","5반-이부철","6반-김태호"] },
+    "고등부(엘피스)": { hint: "", items: [] },
+    "중등부(아가페)": { hint: "", items: [] },
     "무소속": { hint: "", items: [] }
   },
   UNKNOWN: "모름",
@@ -61,4 +61,11 @@ CFG.KIDS = [
 CFG.kidDept = function (birth_year) {
   const y = parseInt(String(birth_year || '').trim(), 10); if (!y) return '';
   const k = CFG.KIDS.find(k => y >= k.from && y <= k.to); return k ? k.label : '';
+};
+
+// 식사 인원 제외 기준(출생연도). null이면 전원 포함. 예: 2025 → 2025년 이후 출생은 식사 인원에서 뺌(총 참석·교회차에는 포함)
+CFG.MEAL_EXCLUDE_BIRTH_FROM = null;
+CFG.mealCounts = function (m) {
+  const y = parseInt(String(m.birth_year || '').trim(), 10);
+  return !(CFG.MEAL_EXCLUDE_BIRTH_FROM && y && y >= CFG.MEAL_EXCLUDE_BIRTH_FROM);
 };

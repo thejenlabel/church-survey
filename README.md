@@ -10,3 +10,7 @@
 - 공개 주소(Netlify): https://ieum-family-worship.netlify.app (site id 560d0940-426c-44f4-958a-3dd5c7096071, 팀 zueisong)
 - 재배포: 코드 수정 후 이 폴더에서 Netlify MCP `deploy-site`가 주는 `npx -y @netlify/mcp@latest --site-id ... --proxy-path ...` 명령 실행
 - GitHub Pages(https://thejenlabel.github.io/church-survey/)는 백업용으로 남아 있음
+
+## 집계 규칙
+- 자녀 부서: 생년 기준 자동(초등부 2014~2019 · 유치부 2020~2023 · 영유아부 2024~2026), `config.js` `CFG.KIDS`
+- 식사 인원: 기본은 갓난아기까지 전원 포함. 나중에 제외 기준이 정해지면 `config.js`의 `CFG.MEAL_EXCLUDE_BIRTH_FROM = 2025` 처럼 켜면 그 해 이후 출생은 식사 인원에서만 빠짐(총 참석·교회차는 포함)
