@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -43,7 +43,7 @@
   </div>
 </div>
 
-<script src="config.js?v=8"></script>
+<script src="config.js?v=9"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').textContent = CFG.TITLE + ' — 관리';
@@ -52,14 +52,10 @@ if (PW) $('pw').value = PW;
 
 // 세부소속 필터 옵션
 for (const [g, def] of Object.entries(CFG.GROUPS)) {
-  const secs = CFG.sections(g);
-  const groups = secs.length ? secs.map(x => [g + ' · ' + x.label, x.items]) : [[g, def.items]];
-  for (const [label, items] of groups) {
-    const og = document.createElement('optgroup'); og.label = label;
-    const list = items.length ? [...items, CFG.UNKNOWN] : [g];
-    for (const s of list) { const o = document.createElement('option'); o.value = g + '|' + (items.length ? s : ''); o.textContent = items.length ? s : g; og.appendChild(o); }
-    $('fSub').appendChild(og);
-  }
+  const og = document.createElement('optgroup'); og.label = g;
+  const list = def.items.length ? [...def.items, CFG.UNKNOWN] : [g];
+  for (const s of list) { const o = document.createElement('option'); o.value = g + '|' + (def.items.length ? s : ''); o.textContent = def.items.length ? s : g; og.appendChild(o); }
+  $('fSub').appendChild(og);
 }
 
 async function rpc(fn, args) {

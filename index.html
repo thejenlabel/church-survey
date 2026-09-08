@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div class="wrap">
@@ -18,10 +18,6 @@
     <input id="name" placeholder="홍길동 (띄어쓰기 없이)" autocomplete="name">
     <label>소속</label>
     <select id="group"><option value="">선택하세요</option></select>
-    <div id="secWrap" hidden>
-      <label>구분</label>
-      <select id="sec"></select>
-    </div>
     <div id="subWrap" hidden>
       <label>세부소속</label>
       <select id="sub"></select>
@@ -49,7 +45,7 @@
   </div>
 </div>
 
-<script src="config.js?v=8"></script>
+<script src="config.js?v=9"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
@@ -67,25 +63,10 @@ for (const g of Object.keys(CFG.GROUPS)) {
 const opt = s => `<option>${String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</option>`;
 $('group').addEventListener('change', () => {
   const g = $('group').value;
-  $('sub').innerHTML = ''; $('sec').innerHTML = '';
-  $('secWrap').hidden = true; $('subWrap').hidden = true;
-  if (!CFG.hasSub(g)) return;
-  const secs = CFG.sections(g);
-  if (secs.length) {
-    // 구분 먼저 → 세부소속은 구분 고른 뒤
-    $('secWrap').hidden = false;
-    $('sec').innerHTML = `<option value="">${CFG.GROUPS[g].hint}</option>` + secs.map(x => opt(x.label)).join('');
-  } else {
-    $('subWrap').hidden = false;
-    $('sub').innerHTML = `<option value="">${CFG.GROUPS[g].hint}</option>` + CFG.subOptionsHtml(g);
-  }
-});
-$('sec').addEventListener('change', () => {
-  const g = $('group').value, label = $('sec').value;
   $('sub').innerHTML = '';
-  if (!label) { $('subWrap').hidden = true; return; }
+  if (!CFG.hasSub(g)) { $('subWrap').hidden = true; return; }
   $('subWrap').hidden = false;
-  $('sub').innerHTML = `<option value="">선택</option>` + CFG.sectionItems(g, label).map(opt).join('') + opt(CFG.UNKNOWN);
+  $('sub').innerHTML = `<option value="">${CFG.GROUPS[g].hint}</option>` + CFG.subOptionsHtml(g);
 });
 
 // 2단계 명단
@@ -113,7 +94,6 @@ $('next').onclick = () => {
   const needSub = CFG.hasSub(g);
   if (!name) return $('err1').textContent = '이름을 입력해 주세요.';
   if (!g) return $('err1').textContent = '소속을 선택해 주세요.';
-  if (needSub && CFG.sections(g).length && !$('sec').value) return $('err1').textContent = '구분을 선택해 주세요.';
   if (needSub && !$('sub').value) return $('err1').textContent = '세부소속을 선택해 주세요.';
   $('err1').textContent = '';
   $('members').innerHTML = '';
