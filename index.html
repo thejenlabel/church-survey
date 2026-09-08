@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <div class="wrap">
@@ -49,12 +49,13 @@
   </div>
 </div>
 
-<script src="config.js"></script>
+<script src="config.js?v=8"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
 document.addEventListener('input', e => {
   if (e.target.matches('#name, .m-name') && /\s/.test(e.target.value)) e.target.value = e.target.value.replace(/\s+/g, '');
+  if (e.target.matches('.m-phone')) { const f = CFG.fmtPhone(e.target.value); if (f !== e.target.value) e.target.value = f; }
 });
 $('title').textContent = CFG.TITLE;
 document.title = CFG.TITLE;
@@ -97,7 +98,7 @@ function addMember(name = '', isSelf = false) {
     <div class="row">
       <div><label>이름</label><input class="m-name" placeholder="이름"></div>
       <div><label>생년 (4자리)</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980"></div>
-      <div><label>전화번호</label><input class="m-phone" inputmode="tel" placeholder="010-0000-0000"></div>
+      <div><label>전화번호</label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="숫자만 입력 (대시 자동)"></div>
       <div></div>
       <div><label>식사 여부</label><select class="m-meal"><option value="">선택</option>${CFG.MEAL.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>
       <div><label>교회 차량</label><select class="m-bus"><option value="">선택</option>${CFG.BUS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>
@@ -132,7 +133,7 @@ $('submit').onclick = async () => {
     const m = {
       name: r.querySelector('.m-name').value.replace(/\s+/g, ''),
       birth_year: r.querySelector('.m-birth').value.trim(),
-      phone: r.querySelector('.m-phone').value.trim(),
+      phone: CFG.fmtPhone(r.querySelector('.m-phone').value),
       meal: r.querySelector('.m-meal').value,
       bus: r.querySelector('.m-bus').value
     };
@@ -158,11 +159,12 @@ $('submit').onclick = async () => {
       // 본인·동반 중 이미 다른 신청서에 등록된 사람 확인
       const fp = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_persons', { method: 'POST', headers: H, body: JSON.stringify({ p_names: members.map(m => m.name) }) });
       const found = fp.ok ? await fp.json() : [];
-      if (found.length) {
-        const key = n => n.replace(/\s/g, '');
-        const bySub = {}; for (const f of found) (bySub[f.person] = bySub[f.person] || []).push(f.submitter);
-        const dupNames = members.filter(m => bySub[key(m.name)]).map(m => `${m.name}님 (${[...new Set(bySub[key(m.name)])].join(', ')}님 신청서)`);
-        const rest = members.filter(m => !bySub[key(m.name)]);
+      // found: 같은 이름의 기존 등록자 [{person, phone, submitter}] → 전화번호 규칙으로 같은 사람만 중복 처리
+      const matchOf = m => [...new Set(found.filter(f => CFG.samePerson(m, { name: f.person, phone: f.phone })).map(f => f.submitter))];
+      const dupList = members.map(m => ({ m, subs: matchOf(m) })).filter(x => x.subs.length);
+      if (dupList.length) {
+        const dupNames = dupList.map(x => `${x.m.name}님 (${x.subs.join(', ')}님 신청서)`);
+        const rest = members.filter(m => !dupList.some(x => x.m === m));
         if (!rest.length) {
           alert(`이미 등록되어 있어 다시 제출할 필요가 없습니다.\n\n${dupNames.join('\n')}\n\n수정이 필요하면 해당 신청서를 제출한 분이 다시 제출해 주세요.`);
           $('submit').disabled = false; $('submit').textContent = '완료'; return;

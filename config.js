@@ -44,3 +44,24 @@ CFG.hasSub = g => !!(CFG.GROUPS[g] && CFG.GROUPS[g].items.length);
 // 구분(섹션)이 있는 소속인지, 섹션 목록, 섹션 안 항목
 CFG.sections = g => (CFG.GROUPS[g] ? CFG.GROUPS[g].items : []).filter(it => typeof it !== 'string');
 CFG.sectionItems = (g, label) => { const sct = CFG.sections(g).find(it => it.label === label); return sct ? sct.items : []; };
+
+// ---- 사람 동일성 판정(공통) ----
+// 전화번호: 숫자만 → 010-1234-5678 형식
+CFG.fmtPhone = function (v) {
+  const d = String(v || '').replace(/\D/g, '').slice(0, 11);
+  if (d.startsWith('02')) return d.length <= 2 ? d : d.length <= 5 ? d.replace(/(\d{2})(\d+)/, '$1-$2') : d.length <= 9 ? d.replace(/(\d{2})(\d{3})(\d+)/, '$1-$2-$3') : d.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
+  if (d.length <= 3) return d;
+  if (d.length <= 7) return d.replace(/(\d{3})(\d+)/, '$1-$2');
+  if (d.length <= 10) return d.replace(/(\d{3})(\d{3})(\d+)/, '$1-$2-$3');
+  return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+};
+CFG.nameKey = n => String(n || '').replace(/\s+/g, '');
+CFG.phoneTail = p => String(p || '').replace(/\D/g, '').slice(-8); // 앞 010 제외 8자리
+// 이름 같고, 전화 뒤 8자리 중 6자리 이상 같으면 같은 사람 (한쪽 번호가 없으면 이름만으로 같은 사람)
+CFG.samePerson = function (a, b) {
+  if (CFG.nameKey(a.name) !== CFG.nameKey(b.name)) return false;
+  const pa = CFG.phoneTail(a.phone), pb = CFG.phoneTail(b.phone);
+  if (pa.length < 8 || pb.length < 8) return true;
+  let same = 0; for (let i = 0; i < 8; i++) if (pa[i] === pb[i]) same++;
+  return same >= 6;
+};

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -39,11 +39,11 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <p class="hint">⚠️ 표시 = 같은 이름이 다른 신청서에도 있음. 위 집계는 같은 이름을 1명으로만 셉니다. 「중복 자동 정리」를 누르면 본인이 직접 낸 신청서를 우선 남기고 나머지에서 뺍니다.</p>
+    <p class="hint">⚠️ 표시 = 같은 사람(이름 동일 + 전화 뒤 8자리 중 6자리 이상 일치, 번호 없으면 이름만)이 다른 신청서에도 있음. 위 집계는 같은 이름을 1명으로만 셉니다. 「중복 자동 정리」를 누르면 본인이 직접 낸 신청서를 우선 남기고 나머지에서 뺍니다.</p>
   </div>
 </div>
 
-<script src="config.js"></script>
+<script src="config.js?v=8"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').textContent = CFG.TITLE + ' — 관리';
@@ -86,10 +86,22 @@ $('login').onclick = load;
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
 if (PW) load();
 
-const keyOf = n => String(n || '').replace(/\s/g, '');
+const keyOf = n => CFG.nameKey(n);
+// 사람 식별: 이름 같고 전화 규칙(뒤 8자리 중 6자리↑ 일치, 번호 없으면 이름만)에 맞으면 같은 사람 → 같은 식별키
+let IDMAP = new Map(); // member 객체 → 식별키
+function buildIdentity() {
+  IDMAP = new Map(); const reps = []; // {key, name, phone}
+  for (const s of DATA) for (const m of s.members) {
+    let rep = reps.find(r => CFG.samePerson(r, m));
+    if (!rep) { rep = { key: keyOf(m.name) + '#' + reps.length, name: m.name, phone: m.phone }; reps.push(rep); }
+    else if (!CFG.phoneTail(rep.phone) && CFG.phoneTail(m.phone)) rep.phone = m.phone;
+    IDMAP.set(m, rep.key);
+  }
+}
+const idOf = m => IDMAP.get(m) || keyOf(m.name);
 function nameCounts() {
-  const c = {};
-  for (const s of DATA) for (const m of s.members) c[keyOf(m.name)] = (c[keyOf(m.name)] || 0) + 1;
+  buildIdentity(); const c = {};
+  for (const s of DATA) for (const m of s.members) c[idOf(m)] = (c[idOf(m)] || 0) + 1;
   return c;
 }
 // 중복 자동 정리: 같은 이름이 여러 신청서에 있으면 본인이 직접 낸 신청서(신청자=본인)를 우선, 없으면 가장 먼저 낸 것만 남김
@@ -100,11 +112,11 @@ async function dedupe() {
   const plan = []; // {id, members}
   const keep = {};
   for (const k of dups) {
-    const own = sorted.find(s => keyOf(s.name) === k && s.members.some(m => keyOf(m.name) === k));
-    keep[k] = own ? own.id : sorted.find(s => s.members.some(m => keyOf(m.name) === k)).id;
+    const own = sorted.find(s => s.members.some(m => idOf(m) === k && keyOf(m.name) === keyOf(s.name)));
+    keep[k] = own ? own.id : sorted.find(s => s.members.some(m => idOf(m) === k)).id;
   }
   for (const s of sorted) {
-    const nm = s.members.filter(m => !(dups.includes(keyOf(m.name)) && keep[keyOf(m.name)] !== s.id));
+    const nm = s.members.filter(m => !(dups.includes(idOf(m)) && keep[idOf(m)] !== s.id));
     if (nm.length !== s.members.length) plan.push({ id: s.id, name: s.name, members: nm });
   }
   const desc = plan.map(p => `· ${p.name} 신청서: ${DATA.find(s => s.id === p.id).members.length}명 → ${p.members.length}명${p.members.length ? '' : ' (신청서 삭제)'}`).join('\n');
@@ -127,9 +139,10 @@ function render() {
   if (q) list = list.filter(s => s.members.some(m => m.name.includes(q)) || s.name.includes(q));
 
   // 같은 이름은 1명으로 집계(식사·차량은 하나라도 O면 O)
+  buildIdentity();
   const seen = new Map();
   for (const s of list) for (const m of s.members) {
-    const k = keyOf(m.name); const prev = seen.get(k) || { meal: 0, bus: 0 };
+    const k = idOf(m); const prev = seen.get(k) || { meal: 0, bus: 0 };
     seen.set(k, { meal: prev.meal || m.meal, bus: prev.bus || m.bus });
   }
   const people = [...seen.values()];
@@ -153,7 +166,7 @@ function render() {
     <td>${s.members.length}</td>
     <td>${s.members.filter(m => m.meal).length}</td>
     <td>${s.members.filter(m => m.bus).length}</td>
-    <td>${s.members.map(m => `<span class="mem">${dup[keyOf(m.name)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
+    <td>${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
     <td style="white-space:nowrap;font-size:12px;color:#6b7280">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
     <td><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
@@ -162,7 +175,7 @@ function render() {
   $('cards').innerHTML = list.map(s => `<div class="scard">
     <div class="scard-h"><b>${esc(s.name)}</b><span class="hint">${esc(s.sub_group) || esc(s.group_type)}</span></div>
     <div class="scard-n">총 ${s.members.length}명 · 식사 ${s.members.filter(m => m.meal).length} · 교회차 ${s.members.filter(m => m.bus).length}</div>
-    ${s.members.map(m => `<span class="mem">${dup[keyOf(m.name)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
+    ${s.members.map(m => `<span class="mem">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
     <div class="scard-f"><span class="hint">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
 }
