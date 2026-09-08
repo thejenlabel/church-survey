@@ -174,3 +174,20 @@ body{background:#f7f8fb}
   .stats{gap:8px}.stat{padding:10px 4px}
   .kids{gap:4px;margin-bottom:12px}.kid{padding:4px 6px;text-align:left}
 }
+
+/* ===== 간격 리듬: 묶음 안 8 · 묶음 사이 28(폰 20) ===== */
+.head{margin:0 0 20px}
+.toolrow{margin:0 0 28px}
+.sec-summary{margin:0 0 28px;padding:0 0 24px;border-bottom:1px solid #e3e7f0}
+.stats{margin:0 0 8px}
+.kids{margin:0}
+.sec-list .filterrow{margin:0 0 12px}
+.scard{margin-bottom:8px}
+#busView{margin-top:0}
+@media (max-width:700px){
+  .head{margin:0 0 14px}
+  .toolrow{margin:0 0 20px}
+  .sec-summary{margin:0 0 20px;padding:0 0 16px}
+  .stats{margin:0 0 6px}
+  .sec-list .filterrow{margin:0 0 10px}
+}

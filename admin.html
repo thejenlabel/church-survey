@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=31">
+<link rel="stylesheet" href="style.css?v=32">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -34,16 +34,18 @@
   <div class="hint" id="notice"></div>
 
   <div id="app" hidden>
-    <div class="stats" id="stats"></div>
-    <div id="kidsCard" hidden>
-      <div class="kids" id="kids"></div>
-    </div>
+    <section class="sec sec-summary">
+      <div class="stats" id="stats"></div>
+      <div id="kidsCard" hidden>
+        <div class="kids" id="kids"></div>
+      </div>
+    </section>
 
-    <div class="card" id="busView" hidden>
+    <div class="card sec sec-list" id="busView" hidden>
       <div class="bus-head"><b>차량 탑승자</b> <span class="hint" id="busSummary"></span></div>
       <div id="busList"></div>
     </div>
-    <div id="listView">
+    <div id="listView" class="sec sec-list">
     <div class="filterrow">
       <div class="filters three">
         <div><select id="fSub" aria-label="소속별 보기"><option value="">소속: 전체</option></select></div>
