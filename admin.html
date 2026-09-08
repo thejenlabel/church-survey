@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=30">
+<link rel="stylesheet" href="style.css?v=31">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -21,21 +21,21 @@
     </div>
     <div class="err" id="err"></div>
   </div>
-  <div class="card" id="toolbar" hidden>
+  <div id="toolbar" class="toolrow" hidden>
     <div class="tabs">
       <button class="tab on" id="tabList">전체 명단</button>
       <button class="tab" id="tabBus">차량 탑승자 확인</button>
     </div>
-    <div class="topbar sub-actions">
+    <div class="sub-actions">
       <button class="btn ghost" id="excel">엑셀 다운로드</button>
       <button class="btn ghost" id="reload">새로고침</button>
     </div>
-    <div class="hint" id="notice"></div>
   </div>
+  <div class="hint" id="notice"></div>
 
   <div id="app" hidden>
     <div class="stats" id="stats"></div>
-    <div class="card" id="kidsCard" hidden>
+    <div id="kidsCard" hidden>
       <div class="kids" id="kids"></div>
     </div>
 
@@ -44,7 +44,7 @@
       <div id="busList"></div>
     </div>
     <div id="listView">
-    <div class="card">
+    <div class="filterrow">
       <div class="filters three">
         <div><select id="fSub" aria-label="소속별 보기"><option value="">소속: 전체</option></select></div>
         <div><select id="fSort" aria-label="정렬"><option value="time|-1">정렬: 최근 제출</option><option value="name|1">정렬: 이름</option><option value="sub|1">정렬: 세부소속</option><option value="meal|-1">정렬: 식사 많은 순</option><option value="bus|-1">정렬: 교회차 많은 순</option></select></div>
