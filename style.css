@@ -48,3 +48,7 @@ th{font-size:12px;color:#6b7280;font-weight:600;background:#f9fafb;position:stic
 @media (max-width:700px){.cards{display:block}.tbl{display:none}.stats{gap:6px}.stat{padding:10px 4px}.stat .n{font-size:22px}.stat .l{font-size:11px}.topbar .btn{flex:1}}
 [hidden]{display:none!important}
 .back{border:0;background:none;color:#2563eb;font:inherit;font-weight:600;padding:0;margin:0 0 6px;cursor:pointer}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal-box{background:#fff;border-radius:14px;padding:20px 18px;max-width:420px;width:100%;font-size:15px;line-height:1.55}
+.modal-btns{display:flex;flex-direction:column;gap:8px}
+.modal-btns .btn{margin:0;width:100%}
