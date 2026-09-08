@@ -231,7 +231,8 @@ body{background:#f7f8fb}
 
 /* 식사 인원 타일 내역: 왼쪽 구분·인원, 오른쪽 금액(단가는 작게), 폰에서도 한 줄 */
 .stat-split .sub{margin:8px 14px 0;padding-top:8px;border-top:1px solid #e6e9f2;font-size:12px;color:#6b7280;text-align:left}
-.stat-split .sub>div{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:3px 0}
+.stat-split .sub>div{display:grid;grid-template-columns:1fr auto;align-items:start;gap:8px;padding:3px 0}
+.stat-split .sub .who{line-height:1.15;padding-top:1px}
 .stat-split .sub .who{white-space:nowrap}
 .stat-split .sub .who b{color:#2E3A8C;font-weight:800}
 .stat-split .sub .amt{text-align:right;white-space:nowrap;line-height:1.15}
