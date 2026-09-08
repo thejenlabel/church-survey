@@ -225,7 +225,7 @@ $('submit').onclick = async () => {
     if (!res.ok) throw new Error(await res.text());
     $('step2').hidden = true; $('done').hidden = false; setStep(3);
     const meal = members.filter(m => m.meal).length, bus = members.filter(m => m.bus).length;
-    $('summary').innerHTML = `<b>총 ${members.length}명 참석</b> · 식사 ${meal}명 · 교회차 ${bus}명` + (updated.length ? `<br><small>${updated.map(m => m.name).join(', ')}님은 기존 정보를 수정했습니다</small>` : '')
+    $('summary').innerHTML = `<b>총 ${members.length}명 참석</b> · 식사 ${meal}명 · 교회 차량 ${bus}명` + (updated.length ? `<br><small>${updated.map(m => m.name).join(', ')}님은 기존 정보를 수정했습니다</small>` : '')
       + `<ul class="done-list">${members.map(m => `<li>${m.name}${m.birth_year ? ' (' + m.birth_year + ')' : ''} — ${m.meal ? '식사함' : '식사안함'} · ${m.bus ? '교회차량' : '차량불필요'}</li>`).join('')}</ul>`;
     window.scrollTo(0, 0);
   } catch (e) {
