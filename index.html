@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -56,12 +56,11 @@ for (const g of Object.keys(CFG.GROUPS)) {
   const o = document.createElement('option'); o.value = g; o.textContent = g; $('group').appendChild(o);
 }
 $('group').addEventListener('change', () => {
-  const list = CFG.GROUPS[$('group').value] || [];
+  const g = $('group').value;
   $('sub').innerHTML = '';
-  if (!list.length) { $('subWrap').hidden = true; return; }
+  if (!CFG.hasSub(g)) { $('subWrap').hidden = true; return; }
   $('subWrap').hidden = false;
-  const hint = $('group').value === '대학청년부' ? '리더 이름' : ($('group').value === '중고등부' ? '반 / 선생님' : '다락방 / 순장');
-  $('sub').innerHTML = `<option value="">${hint} 선택</option>` + list.map(s => `<option>${s}</option>`).join('') + `<option>${CFG.UNKNOWN}</option>`;
+  $('sub').innerHTML = `<option value="">${CFG.GROUPS[g].hint}</option>` + CFG.subOptionsHtml(g);
 });
 
 // 2단계 명단
@@ -76,8 +75,8 @@ function addMember(name = '', isSelf = false) {
       <div><label>생년 (4자리)</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980"></div>
       <div><label>전화번호</label><input class="m-phone" inputmode="tel" placeholder="010-0000-0000"></div>
       <div></div>
-      <div><label>식사 여부</label><select class="m-meal"><option value="">선택</option><option value="1">식사함</option><option value="0">식사 안함</option></select></div>
-      <div><label>교회 차량</label><select class="m-bus"><option value="">선택</option><option value="1">교회차량 필요</option><option value="0">교회차량 불필요</option></select></div>
+      <div><label>식사 여부</label><select class="m-meal"><option value="">선택</option>${CFG.MEAL.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>
+      <div><label>교회 차량</label><select class="m-bus"><option value="">선택</option>${CFG.BUS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></div>
     </div>`;
   d.querySelector('.m-name').value = name;
   $('members').appendChild(d);
@@ -86,7 +85,7 @@ function addMember(name = '', isSelf = false) {
 
 $('next').onclick = () => {
   const name = $('name').value.trim(), g = $('group').value;
-  const needSub = (CFG.GROUPS[g] || []).length > 0;
+  const needSub = CFG.hasSub(g);
   if (!name) return $('err1').textContent = '이름을 입력해 주세요.';
   if (!g) return $('err1').textContent = '소속을 선택해 주세요.';
   if (needSub && !$('sub').value) return $('err1').textContent = '세부소속을 선택해 주세요.';
@@ -120,7 +119,7 @@ $('submit').onclick = async () => {
   $('err2').textContent = '';
   $('submit').disabled = true; $('submit').textContent = '저장 중…';
   const g = $('group').value;
-  const body = { name: $('name').value.trim(), group_type: g, sub_group: (CFG.GROUPS[g] || []).length ? $('sub').value : '', members };
+  const body = { name: $('name').value.trim(), group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
   try {
     // 같은 이름·소속으로 이미 제출됐는지 확인

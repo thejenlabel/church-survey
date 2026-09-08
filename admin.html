@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -50,10 +50,16 @@ let DATA = [], PW = sessionStorage.getItem('pw') || '';
 if (PW) $('pw').value = PW;
 
 // 세부소속 필터 옵션
-for (const [g, list] of Object.entries(CFG.GROUPS)) {
+for (const [g, def] of Object.entries(CFG.GROUPS)) {
   const og = document.createElement('optgroup'); og.label = g;
-  const items = list.length ? [...list, CFG.UNKNOWN] : [g];
-  for (const s of items) { const o = document.createElement('option'); o.value = g + '|' + (list.length ? s : ''); o.textContent = list.length ? s : g; og.appendChild(o); }
+  const flat = def.items.flatMap(it => typeof it === 'string' ? [it] : it.items.map(s => it.label + ' ' + s));
+  const items = flat.length ? [...flat, CFG.UNKNOWN] : [g];
+  for (const s of items) {
+    const o = document.createElement('option');
+    // 중고등부는 '엘피스(고등부) 1반-오수근A' 표시, 저장값은 '1반-오수근A'
+    const val = flat.length ? s.replace(/^(엘피스\(고등부\)|아가페\(중등부\)) /, '') : '';
+    o.value = g + '|' + val; o.textContent = flat.length ? s : g; og.appendChild(o);
+  }
   $('fSub').appendChild(og);
 }
 
