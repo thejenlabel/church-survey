@@ -233,15 +233,16 @@ $('submit').onclick = async () => {
       await rpc('replace_submission_by_id', { p_id: EDIT.id, p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members });
       $('done').querySelector('p').textContent = '수정되었습니다';
     } else {
-      const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/submissions', { method: 'POST', headers: H, body: JSON.stringify(body) });
-      if (!r.ok) throw new Error(await r.text());
-      // 남의 신청서에 동반으로 들어 있던 본인(과 이번에 적은 가족) 항목은 그쪽에서 뺀다 → 소속·정보는 본인 신청서가 정본
+      // 남의 신청서에 동반으로 들어 있던 본인·가족 항목을 먼저 찾아 둔다(저장 전에 조회 → 본인 신청서는 아직 없으므로 안전)
       const pulls = [...PULL];
       try {
         const tails = [...new Set(members.slice(1).map(m => CFG.phoneTail(m.phone)).filter(t => t.length === 8))];
         const sim = tails.length ? (await rpc('find_similar', { p_tails: tails }) || []) : [];
         for (const m of members.slice(1)) for (const x of sim) if (!x.is_self && CFG.samePerson(m, { name: x.person, phone: x.phone, birth_year: x.birth_year })) pulls.push({ sid: x.sid, name: x.person });
       } catch (e) { console.error(e); }
+      const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/submissions', { method: 'POST', headers: H, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error(await r.text());
+      // 저장 후 그쪽 신청서에서 뺀다 → 소속·정보는 본인 신청서가 정본
       for (const p of pulls) { try { await rpc('remove_member', { p_sid: p.sid, p_name: p.name }); } catch (e) { console.error(e); } }
       $('done').querySelector('p').textContent = '제출되었습니다';
     }
