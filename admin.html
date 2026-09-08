@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=44">
+<link rel="stylesheet" href="style.css?v=45">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -252,14 +252,14 @@ function render() {
   };
   $('rows').innerHTML = list.map(s => `<tr>
     <td><b>${esc(s.name)}</b></td>
-    <td class="wrap">${esc(s.group_type)}</td>
-    <td class="wrap">${esc(s.sub_group) || '-'}</td>
+    <td class="wrapcell">${esc(s.group_type)}</td>
+    <td class="wrapcell">${esc(s.sub_group) || '-'}</td>
     <td>${s.members.length}</td>
     <td>${s.members.filter(m => m.meal && CFG.countsFor(m)).length}</td>
     <td>${s.members.filter(m => m.bus && CFG.countsFor(m)).length}</td>
-    <td>${s.members.map(memHtml).join('')}</td>
+    <td class="members">${s.members.map(memHtml).join('')}</td>
     <td style="white-space:nowrap;font-size:12px;color:#6b7280">${shortTime(s.created_at)}</td>
-    <td><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
+    <td class="del"><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
 
   // 모바일 카드

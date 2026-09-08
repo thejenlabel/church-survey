@@ -28,7 +28,13 @@ input:focus,select:focus{outline:2px solid #2E3A8C;outline-offset:0;border-color
 .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{padding:8px 6px;border-bottom:1px solid #eef0f3;text-align:left;vertical-align:top;white-space:nowrap}
-td.wrap,th.wrap{white-space:normal}
+td.wrapcell{white-space:normal}
+/* 표 세로 기준선: 첫 참석자 줄(32px) 중앙에 맞춤 · 양옆 여백 */
+tbody td{padding-top:14px}
+tbody td.members{padding-top:8px}
+tbody td.del{padding-top:10px}
+th:first-child,td:first-child{padding-left:18px}
+th:last-child,td:last-child{padding-right:18px}
 table{min-width:0;width:100%}
 th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:sticky;top:0;white-space:nowrap}
 .tbl{overflow-x:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px}
