@@ -132,6 +132,9 @@ $('submit').onclick = async () => {
       meal: r.querySelector('.m-meal').value,
       bus: r.querySelector('.m-bus').value
     };
+    // 아무것도 안 적은 동반 칸은 건너뜀(인원 추가만 누르고 안 쓴 경우)
+    const isSelf = r === rows[0];
+    if (!isSelf && !m.name && !m.birth_year && !m.phone && m.meal === '' && m.bus === '') { r.remove(); continue; }
     if (!m.name) return $('err2').textContent = '이름이 비어 있는 칸이 있습니다.';
     if (m.meal === '' || m.bus === '') return $('err2').textContent = `${m.name}님의 식사·차량 여부를 선택해 주세요.`;
     m.meal = +m.meal; m.bus = +m.bus;
