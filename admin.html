@@ -273,7 +273,7 @@ $('busList').addEventListener('change', async e => {
 $('busToggle').onclick = () => {
   const show = $('busView').hidden;
   $('busView').hidden = !show; $('listView').hidden = show; $('stats').hidden = show; $('kidsCard').hidden = show;
-  $('busToggle').textContent = show ? '전체 명단으로' : '차량 탑승자 확인';
+  $('busToggle').textContent = show ? '전체 명단으로 돌아가기' : '차량 탑승자 확인';
   if (show) renderBus();
 };
 $('excel').onclick = () => {
