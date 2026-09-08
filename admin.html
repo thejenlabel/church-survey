@@ -17,6 +17,7 @@
       <input id="pw" type="password" placeholder="비밀번호">
       <button class="btn" id="login">불러오기</button>
       <button class="btn ghost" id="excel" hidden>엑셀 다운로드</button>
+      <button class="btn ghost" id="dedupe" hidden>중복 자동 정리</button>
     </div>
     <div class="err" id="err"></div>
   </div>
@@ -38,7 +39,7 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <p class="hint">⚠️ 표시 = 같은 이름이 다른 신청서에도 있음(가족이 각자 제출했을 수 있으니 확인 후 하나를 삭제하세요).</p>
+    <p class="hint">⚠️ 표시 = 같은 이름이 다른 신청서에도 있음. 위 집계는 같은 이름을 1명으로만 셉니다. 「중복 자동 정리」를 누르면 본인이 직접 낸 신청서를 우선 남기고 나머지에서 뺍니다.</p>
   </div>
 </div>
 
@@ -77,7 +78,7 @@ async function load() {
     if (!(await rpc('admin_check', { pw: PW }))) { $('err').textContent = '비밀번호가 틀렸습니다.'; return; }
     sessionStorage.setItem('pw', PW);
     DATA = await rpc('admin_list', { pw: PW });
-    $('app').hidden = false; $('excel').hidden = false;
+    $('app').hidden = false; $('excel').hidden = false; $('dedupe').hidden = false;
     render();
   } catch (e) { $('err').textContent = '불러오기 실패: ' + e.message; }
 }
@@ -85,11 +86,38 @@ $('login').onclick = load;
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
 if (PW) load();
 
+const keyOf = n => String(n || '').replace(/\s/g, '');
 function nameCounts() {
   const c = {};
-  for (const s of DATA) for (const m of s.members) c[m.name] = (c[m.name] || 0) + 1;
+  for (const s of DATA) for (const m of s.members) c[keyOf(m.name)] = (c[keyOf(m.name)] || 0) + 1;
   return c;
 }
+// 중복 자동 정리: 같은 이름이 여러 신청서에 있으면 본인이 직접 낸 신청서(신청자=본인)를 우선, 없으면 가장 먼저 낸 것만 남김
+async function dedupe() {
+  const c = nameCounts(); const dups = Object.keys(c).filter(k => c[k] > 1);
+  if (!dups.length) return alert('중복된 이름이 없습니다.');
+  const sorted = [...DATA].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const plan = []; // {id, members}
+  const keep = {};
+  for (const k of dups) {
+    const own = sorted.find(s => keyOf(s.name) === k && s.members.some(m => keyOf(m.name) === k));
+    keep[k] = own ? own.id : sorted.find(s => s.members.some(m => keyOf(m.name) === k)).id;
+  }
+  for (const s of sorted) {
+    const nm = s.members.filter(m => !(dups.includes(keyOf(m.name)) && keep[keyOf(m.name)] !== s.id));
+    if (nm.length !== s.members.length) plan.push({ id: s.id, name: s.name, members: nm });
+  }
+  const desc = plan.map(p => `· ${p.name} 신청서: ${DATA.find(s => s.id === p.id).members.length}명 → ${p.members.length}명${p.members.length ? '' : ' (신청서 삭제)'}`).join('\n');
+  if (!confirm(`중복 ${dups.length}명을 정리합니다.\n${desc}\n\n진행할까요?`)) return;
+  try {
+    for (const p of plan) {
+      if (p.members.length) { await rpc('admin_set_members', { pw: PW, target: p.id, new_members: p.members }); DATA.find(s => s.id === p.id).members = p.members; }
+      else { await rpc('admin_delete', { pw: PW, target: p.id }); DATA = DATA.filter(s => s.id !== p.id); }
+    }
+    render();
+  } catch (e) { alert('정리 실패: ' + e.message); }
+}
+$('dedupe').onclick = dedupe;
 
 function render() {
   const [fg, fs] = ($('fSub').value || '|').split('|');
@@ -98,14 +126,22 @@ function render() {
   if (fg) list = list.filter(s => s.group_type === fg && (fs === '' ? true : s.sub_group === fs));
   if (q) list = list.filter(s => s.members.some(m => m.name.includes(q)) || s.name.includes(q));
 
-  const people = list.flatMap(s => s.members);
+  // 같은 이름은 1명으로 집계(식사·차량은 하나라도 O면 O)
+  const seen = new Map();
+  for (const s of list) for (const m of s.members) {
+    const k = keyOf(m.name); const prev = seen.get(k) || { meal: 0, bus: 0 };
+    seen.set(k, { meal: prev.meal || m.meal, bus: prev.bus || m.bus });
+  }
+  const people = [...seen.values()];
+  const rawCount = list.reduce((a, s) => a + s.members.length, 0);
   const total = people.length, meal = people.filter(m => m.meal).length, bus = people.filter(m => m.bus).length;
+  const dupNote = rawCount > total ? ` · 중복 ${rawCount - total}명 제외` : '';
   const direct = list.length; // 세부소속 본인(신청자) 수
   $('stats').innerHTML = fg
-    ? `<div class="stat"><div class="n">${direct}<span style="font-size:14px;color:#6b7280"> / ${total}</span></div><div class="l">참석인원(소속 본인) / 총인원(가족 포함)</div></div>
+    ? `<div class="stat"><div class="n">${direct}<span style="font-size:14px;color:#6b7280"> / ${total}</span></div><div class="l">참석인원(소속 본인) / 총인원(가족 포함${dupNote})</div></div>
        <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`
-    : `<div class="stat"><div class="n">${total}</div><div class="l">총 참석 인원 (신청 ${direct}건)</div></div>
+    : `<div class="stat"><div class="n">${total}</div><div class="l">총 참석 인원 (신청 ${direct}건${dupNote})</div></div>
        <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`;
 
@@ -117,7 +153,7 @@ function render() {
     <td>${s.members.length}</td>
     <td>${s.members.filter(m => m.meal).length}</td>
     <td>${s.members.filter(m => m.bus).length}</td>
-    <td>${s.members.map(m => `<span class="mem">${dup[m.name] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
+    <td>${s.members.map(m => `<span class="mem">${dup[keyOf(m.name)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}</td>
     <td style="white-space:nowrap;font-size:12px;color:#6b7280">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
     <td><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
@@ -126,7 +162,7 @@ function render() {
   $('cards').innerHTML = list.map(s => `<div class="scard">
     <div class="scard-h"><b>${esc(s.name)}</b><span class="hint">${esc(s.sub_group) || esc(s.group_type)}</span></div>
     <div class="scard-n">총 ${s.members.length}명 · 식사 ${s.members.filter(m => m.meal).length} · 교회차 ${s.members.filter(m => m.bus).length}</div>
-    ${s.members.map(m => `<span class="mem">${dup[m.name] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
+    ${s.members.map(m => `<span class="mem">${dup[keyOf(m.name)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
     <div class="scard-f"><span class="hint">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
 }
