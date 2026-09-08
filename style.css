@@ -62,3 +62,4 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .kid-s{font-size:12px;color:#6b7280}
 .badge.kidb{background:#fff3e0;color:#9a5b00}
 @media (max-width:700px){.kids{grid-template-columns:repeat(2,1fr)}}
+.stat .l small{color:#9ca3af;font-size:11px}

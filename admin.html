@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=17">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -13,7 +13,6 @@
 <div class="wrap wide">
   <img src="logo.png" alt="이음교회" class="logo">
   <h1 id="title"></h1>
-  <p class="sub">관리자 페이지 · 순장/리더/교사는 아래 세부소속에서 본인 다락방을 고르세요</p>
 
   <div class="card">
     <div class="topbar">
@@ -28,7 +27,7 @@
   <div id="app" hidden>
     <div class="stats" id="stats"></div>
     <div class="card" id="kidsCard" hidden>
-      <label style="margin-top:0">자녀 부서별 (전체 집계에 포함된 인원을 생년 기준으로 따로 표시)</label>
+      <label style="margin-top:0">자녀 부서별</label>
       <div class="kids" id="kids"></div>
     </div>
 
@@ -46,11 +45,10 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <p class="hint">⚠️ 표시 = 같은 사람이 다른 신청서에도 있음. 같은 사람 판정 순서: 이름 → 전화 뒤 8자리 중 6자리 이상 → 생년. 셋 다 맞아야 같은 사람. 위 집계는 같은 이름을 1명으로만 셉니다. 「중복 자동 정리」를 누르면 본인이 직접 낸 신청서를 우선 남기고 나머지에서 뺍니다.</p>
   </div>
 </div>
 
-<script src="config.js?v=14"></script>
+<script src="config.js?v=16"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').textContent = CFG.TITLE + ' — 관리';
@@ -145,22 +143,22 @@ function render() {
   buildIdentity();
   const seen = new Map();
   for (const s of list) for (const m of s.members) {
-    const k = idOf(m); const prev = seen.get(k) || { meal: 0, bus: 0, mealEx: 0 };
-    seen.set(k, { meal: prev.meal || (m.meal && CFG.mealCounts(m) ? 1 : 0), bus: prev.bus || m.bus, mealEx: prev.mealEx || (m.meal && !CFG.mealCounts(m) ? 1 : 0) });
+    const k = idOf(m); const prev = seen.get(k) || { meal: 0, bus: 0, ex: 0 };
+    const ok = CFG.countsFor(m);
+    seen.set(k, { meal: prev.meal || (m.meal && ok ? 1 : 0), bus: prev.bus || (m.bus && ok ? 1 : 0), ex: prev.ex || (!ok && (m.meal || m.bus) ? 1 : 0) });
   }
   const people = [...seen.values()];
   const rawCount = list.reduce((a, s) => a + s.members.length, 0);
   const total = people.length, meal = people.filter(m => m.meal).length, bus = people.filter(m => m.bus).length;
-  const mealEx = people.filter(m => m.mealEx).length;
-  const mealNote = CFG.MEAL_EXCLUDE_BIRTH_FROM ? ` (${CFG.MEAL_EXCLUDE_BIRTH_FROM}년생 이후 ${mealEx}명 제외)` : '';
+  const excluded = people.filter(m => m.ex).length;
   const dupNote = rawCount > total ? ` · 중복 ${rawCount - total}명 제외` : '';
   const direct = list.length; // 세부소속 본인(신청자) 수
   $('stats').innerHTML = fg
     ? `<div class="stat"><div class="n">${direct}<span style="font-size:14px;color:#6b7280"> / ${total}</span></div><div class="l">참석인원(소속 본인) / 총인원(가족 포함${dupNote})</div></div>
-       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원${mealNote}</div></div>
+       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`
     : `<div class="stat"><div class="n">${total}</div><div class="l">총 참석 인원 (신청 ${direct}건${dupNote})</div></div>
-       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원${mealNote}</div></div>
+       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`;
 
   // 자녀 부서별 집계(같은 사람 1명으로)
@@ -168,12 +166,12 @@ function render() {
   for (const s of list) for (const m of s.members) {
     const dpt = CFG.kidDept(m.birth_year); if (!dpt) continue;
     const key = idOf(m); if (kid[dpt].seen.has(key)) continue; kid[dpt].seen.add(key);
-    kid[dpt].n++; if (m.meal && CFG.mealCounts(m)) kid[dpt].meal++; if (m.bus) kid[dpt].bus++;
+    kid[dpt].n++; if (m.meal && CFG.countsFor(m)) kid[dpt].meal++; if (m.bus && CFG.countsFor(m)) kid[dpt].bus++;
   }
   const kidTotal = Object.values(kid).reduce((a, k) => a + k.n, 0);
   $('kidsCard').hidden = false;
   $('kids').innerHTML = CFG.KIDS.map(k => `<div class="kid"><div class="kid-l">${k.label}<small>${k.from}~${k.to}년생</small></div><div class="kid-n">${kid[k.label].n}<small>명</small></div><div class="kid-s">식사 ${kid[k.label].meal} · 교회차 ${kid[k.label].bus}</div></div>`).join('')
-    + `<div class="kid sum"><div class="kid-l">자녀 합계</div><div class="kid-n">${kidTotal}<small>명</small></div><div class="kid-s">성인 ${total - kidTotal}명</div></div>`;
+    + `<div class="kid sum"><div class="kid-l">식사/교회차 미집계 인원<small>${String(CFG.EXCLUDE_BIRTH_FROM).slice(2)}년생 이후 출생자</small></div><div class="kid-n">${excluded}<small>명</small></div></div>`;
 
   const dup = nameCounts();
   $('rows').innerHTML = list.map(s => `<tr>
@@ -218,7 +216,7 @@ $('excel').onclick = () => {
     return r;
   });
   // 시트2: 개인별 전체 명단
-  const s2 = DATA.flatMap(s => s.members.map((m, i) => ({ 이름: m.name, 구분: i === 0 ? '본인' : '동반', 부서: CFG.kidDept(m.birth_year), 신청자: s.name, 소속: s.group_type, 세부소속: s.sub_group, 생년: m.birth_year || '', 전화번호: m.phone || '', '식사(0/1)': m.meal ? 1 : 0, '교회차(0/1)': m.bus ? 1 : 0 })));
+  const s2 = DATA.flatMap(s => s.members.map((m, i) => ({ 이름: m.name, 구분: i === 0 ? '본인' : '동반', 부서: CFG.kidDept(m.birth_year), '식사·차량 집계': CFG.countsFor(m) ? '집계' : '미집계', 신청자: s.name, 소속: s.group_type, 세부소속: s.sub_group, 생년: m.birth_year || '', 전화번호: m.phone || '', '식사(0/1)': m.meal ? 1 : 0, '교회차(0/1)': m.bus ? 1 : 0 })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s1), '신청자별');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s2), '전체명단');

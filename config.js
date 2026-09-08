@@ -63,9 +63,10 @@ CFG.kidDept = function (birth_year) {
   const k = CFG.KIDS.find(k => y >= k.from && y <= k.to); return k ? k.label : '';
 };
 
-// 식사 인원 제외 기준(출생연도). null이면 전원 포함. 예: 2025 → 2025년 이후 출생은 식사 인원에서 뺌(총 참석·교회차에는 포함)
-CFG.MEAL_EXCLUDE_BIRTH_FROM = null;
-CFG.mealCounts = function (m) {
+// 식사·교회차 미집계 기준(출생연도): 이 해 이후 출생은 식사·교회차 인원에서 자동 제외(총 참석에는 포함).
+// 부모가 식사/차량을 체크한 경우에만 '미집계 인원'으로 따로 센다.
+CFG.EXCLUDE_BIRTH_FROM = 2025;
+CFG.countsFor = function (m) {
   const y = parseInt(String(m.birth_year || '').trim(), 10);
-  return !(CFG.MEAL_EXCLUDE_BIRTH_FROM && y && y >= CFG.MEAL_EXCLUDE_BIRTH_FROM);
+  return !(CFG.EXCLUDE_BIRTH_FROM && y && y >= CFG.EXCLUDE_BIRTH_FROM);
 };
