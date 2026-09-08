@@ -80,7 +80,8 @@ CFG.kidDept = function (birth_year) {
 
 // 식사·교회 차량 미집계 기준(출생연도): 이 해 이후 출생은 식사·교회 차량 인원에서 자동 제외(총 참석에는 포함).
 // 부모가 식사/차량을 체크한 경우에만 '미집계 인원'으로 따로 센다.
-CFG.EXCLUDE_BIRTH_FROM = 2024; // 2026-09-08 변경: 24년생 이후 식사·교회 차량 미집계(종전 25년)
+CFG.EXCLUDE_BIRTH_FROM = 2024;
+CFG.PHONE_OPTIONAL_FROM = 2014; // 동반 가족 전화번호: 이 해 이후 출생(초등부 이하)만 생략 가능, 그 외 필수 // 2026-09-08 변경: 24년생 이후 식사·교회 차량 미집계(종전 25년)
 CFG.countsFor = function (m) {
   const y = parseInt(String(m.birth_year || '').trim(), 10);
   return !(CFG.EXCLUDE_BIRTH_FROM && y && y >= CFG.EXCLUDE_BIRTH_FROM);

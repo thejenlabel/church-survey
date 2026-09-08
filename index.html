@@ -62,7 +62,7 @@
   </div>
 </div>
 
-<script src="config.js?v=24"></script>
+<script src="config.js?v=25"></script>
 <script>
 const $ = id => document.getElementById(id);
 const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
@@ -166,8 +166,8 @@ function addMember(name = '', isSelf = false, data = null) {
     <div class="member-h"><h4>${isSelf ? '본인' : '동반 가족'}</h4>${isSelf ? selfBtn : '<button type="button" class="rm" aria-label="삭제">삭제</button>'}</div>
     <div class="row">
       <div><label>이름</label><input class="m-name" placeholder="이름" autocomplete="off"></div>
-      <div><label>생년 (4자리)${isSelf ? ' <em>필수</em>' : ''}</label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><div class="dept hint"></div></div>
-      <div><label>전화번호${isSelf ? ' <em>필수</em>' : ''}</label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="01012345678" autocomplete="off"></div>
+      <div><label>생년 (4자리) <em>필수</em></label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><div class="dept hint"></div></div>
+      <div><label>전화번호 <em>필수</em>${isSelf ? '' : ' <small class="hint" style="display:inline">(' + CFG.PHONE_OPTIONAL_FROM + '년 이후 출생은 생략 가능)</small>'}</label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="01012345678" autocomplete="off"></div>
       <div class="row-gap"></div>
       <div><label>식사</label>${seg('m-meal', CFG.MEAL)}</div>
       <div><label>교회 차량</label>${seg('m-bus', CFG.BUS)}</div>
@@ -218,8 +218,10 @@ $('submit').onclick = async () => {
     const isSelf = r === rows[0];
     if (!isSelf && !m.name && !m.birth_year && !m.phone && m.meal === '' && m.bus === '') { r.remove(); continue; }
     if (!m.name) return fail('이름이 비어 있는 칸이 있습니다.');
-    if (isSelf && !/^\d{4}$/.test(m.birth_year)) return fail('본인 생년 4자리를 입력해 주세요.');
-    if (isSelf && CFG.phoneTail(m.phone).length < 8) return fail('본인 전화번호를 입력해 주세요.');
+    if (!/^\d{4}$/.test(m.birth_year)) return fail(`${isSelf ? '본인' : m.name + '님'} 생년 4자리를 입력해 주세요.`);
+    // 전화번호: 본인 필수, 동반도 필수(단 PHONE_OPTIONAL_FROM년 이후 출생은 생략 가능) — 같은 사람 판정이 전화로 이뤄지므로
+    const phoneOptional = !isSelf && +m.birth_year >= CFG.PHONE_OPTIONAL_FROM;
+    if (!phoneOptional && CFG.phoneTail(m.phone).length < 8) return fail(`${isSelf ? '본인' : m.name + '님'} 전화번호를 입력해 주세요.`);
     if (m.meal === '' || m.bus === '') return fail(`${m.name}님의 식사·차량을 선택해 주세요.`);
     m.meal = +m.meal; m.bus = +m.bus;
     members.push(m);
