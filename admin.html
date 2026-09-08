@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>참석자 관리</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -31,6 +31,7 @@
       </div>
     </div>
 
+    <div id="cards" class="cards"></div>
     <div class="tbl">
       <table>
         <thead><tr><th>신청자</th><th>소속</th><th>세부소속</th><th>인원</th><th>식사</th><th>교회차</th><th>참석자 명단</th><th>제출시각</th><th></th></tr></thead>
@@ -116,11 +117,19 @@ function render() {
     <td style="white-space:nowrap;font-size:12px;color:#6b7280">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
     <td><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
+
+  // 모바일 카드
+  $('cards').innerHTML = list.map(s => `<div class="scard">
+    <div class="scard-h"><b>${esc(s.name)}</b><span class="hint">${esc(s.sub_group) || esc(s.group_type)}</span></div>
+    <div class="scard-n">총 ${s.members.length}명 · 식사 ${s.members.filter(m => m.meal).length} · 교회차 ${s.members.filter(m => m.bus).length}</div>
+    ${s.members.map(m => `<span class="mem">${dup[m.name] > 1 ? '⚠️ ' : ''}${esc(m.name)}${m.birth_year ? ' (' + esc(m.birth_year) + ')' : ''} <span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>${m.phone ? ' <small>' + esc(m.phone) + '</small>' : ''}</span>`).join('')}
+    <div class="scard-f"><span class="hint">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
+  </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
 }
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 $('fSub').onchange = render; $('fName').oninput = render;
 
-$('rows').addEventListener('click', async e => {
+document.addEventListener('click', async e => {
   const b = e.target.closest('button[data-id]'); if (!b) return;
   if (!confirm(`${b.dataset.name} 신청서를 삭제할까요?`)) return;
   try { await rpc('admin_delete', { pw: PW, target: b.dataset.id }); DATA = DATA.filter(s => s.id !== b.dataset.id); render(); }

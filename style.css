@@ -38,3 +38,11 @@ th{font-size:12px;color:#6b7280;font-weight:600;background:#f9fafb;position:stic
 .topbar input{flex:1;min-width:160px}
 .topbar .btn{width:auto;margin:0;padding:11px 16px}
 @media (max-width:600px){.filters{grid-template-columns:1fr}.member .row{grid-template-columns:1fr}}
+
+/* 관리자 모바일 카드 */
+.cards{display:none}
+.scard{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.scard-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:16px}
+.scard-n{font-size:13px;color:#2563eb;font-weight:600;margin:4px 0 8px}
+.scard-f{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+@media (max-width:700px){.cards{display:block}.tbl{display:none}.stats{gap:6px}.stat{padding:10px 4px}.stat .n{font-size:22px}.stat .l{font-size:11px}.topbar .btn{flex:1}}
