@@ -19,9 +19,9 @@
       <input id="pw" type="password" placeholder="비밀번호">
       <button class="btn" id="login">불러오기</button>
       <button class="btn ghost" id="excel" hidden>엑셀 다운로드</button>
-      <button class="btn ghost" id="dedupe" hidden>중복 자동 정리</button>
     </div>
     <div class="err" id="err"></div>
+    <div class="hint" id="notice"></div>
   </div>
 
   <div id="app" hidden>
@@ -79,8 +79,9 @@ async function load() {
     if (!(await rpc('admin_check', { pw: PW }))) { $('err').textContent = '비밀번호가 틀렸습니다.'; return; }
     sessionStorage.setItem('pw', PW);
     DATA = await rpc('admin_list', { pw: PW });
-    $('app').hidden = false; $('excel').hidden = false; $('dedupe').hidden = false;
+    $('app').hidden = false; $('excel').hidden = false;
     render();
+    await dedupe(true);
   } catch (e) { $('err').textContent = '불러오기 실패: ' + e.message; }
 }
 $('login').onclick = load;
@@ -106,9 +107,11 @@ function nameCounts() {
   return c;
 }
 // 중복 자동 정리: 같은 이름이 여러 신청서에 있으면 본인이 직접 낸 신청서(신청자=본인)를 우선, 없으면 가장 먼저 낸 것만 남김
-async function dedupe() {
+// 자동 실행(불러오기 직후): 같은 사람이 여러 신청서에 있으면 본인이 직접 낸 신청서를 우선 남기고 나머지에서 뺀다
+async function dedupe(auto) {
   const c = nameCounts(); const dups = Object.keys(c).filter(k => c[k] > 1);
-  if (!dups.length) return alert('중복된 이름이 없습니다.');
+  $('notice').textContent = '';
+  if (!dups.length) { if (!auto) alert('중복된 이름이 없습니다.'); return; }
   const sorted = [...DATA].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   const plan = []; // {id, members}
   const keep = {};
@@ -120,17 +123,17 @@ async function dedupe() {
     const nm = s.members.filter(m => !(dups.includes(idOf(m)) && keep[idOf(m)] !== s.id));
     if (nm.length !== s.members.length) plan.push({ id: s.id, name: s.name, members: nm });
   }
-  const desc = plan.map(p => `· ${p.name} 신청서: ${DATA.find(s => s.id === p.id).members.length}명 → ${p.members.length}명${p.members.length ? '' : ' (신청서 삭제)'}`).join('\n');
-  if (!confirm(`중복 ${dups.length}명을 정리합니다.\n${desc}\n\n진행할까요?`)) return;
+  const desc = plan.map(p => `${p.name} 신청서 ${DATA.find(s => s.id === p.id).members.length}명 → ${p.members.length}명${p.members.length ? '' : ' (삭제)'}`).join(', ');
+  if (!auto && !confirm(`중복 ${dups.length}명을 정리합니다.\n${desc}\n\n진행할까요?`)) return;
   try {
     for (const p of plan) {
       if (p.members.length) { await rpc('admin_set_members', { pw: PW, target: p.id, new_members: p.members }); DATA.find(s => s.id === p.id).members = p.members; }
       else { await rpc('admin_delete', { pw: PW, target: p.id }); DATA = DATA.filter(s => s.id !== p.id); }
     }
     render();
+    $('notice').textContent = `중복 ${dups.length}명 자동 정리: ${desc}`;
   } catch (e) { alert('정리 실패: ' + e.message); }
 }
-$('dedupe').onclick = dedupe;
 
 function render() {
   const [fg, fs] = ($('fSub').value || '|').split('|');
