@@ -55,7 +55,7 @@
   </div>
 </div>
 
-<script src="config.js?v=22"></script>
+<script src="config.js?v=23"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
@@ -235,12 +235,11 @@ $('submit').onclick = async () => {
       const fs = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_similar', { method: 'POST', headers: H, body: JSON.stringify({ p_tails: tails }) });
       const sim = fs.ok ? await fs.json() : [];
       for (const m of members) {
-        const c = sim.find(x => CFG.likelyTypo(m, { name: x.person, phone: x.phone, birth_year: x.birth_year }));
+        const c = sim.find(x => CFG.likelyTypo(m, { name: x.person, phone: x.phone }));
         if (!c) continue;
-        const info = x => `${x.name} (${x.birth_year || '생년 없음'} · ${x.phone || '번호 없음'})`;
-        const pick = await choose(`혹시 이분과 같은 분인가요?\n\n기존: ${info({ name: c.person, birth_year: c.birth_year, phone: c.phone })}\n입력: ${info(m)}`, [
-          { label: '같은 사람입니다 (기존 이름으로 수정)', value: 'same', primary: true }, { label: '다른 사람입니다', value: 'diff' }]);
-        if (pick === 'same') { m.name = c.person; if (m === members[0]) body.name = c.person; const r = document.querySelectorAll('.member')[members.indexOf(m)]; if (r) r.querySelector('.m-name').value = c.person; }
+        // 같은 사람(전화 일치, 이름 한 글자 차이) → 기존 철자로 통일
+        m.name = c.person; if (m === members[0]) body.name = c.person;
+        const r = document.querySelectorAll('.member')[members.indexOf(m)]; if (r) r.querySelector('.m-name').value = c.person;
       }
     }
     // 본인·동반 이름으로 기존 등록자 조회 → 같은 사람 판정(이름·생년·전화)

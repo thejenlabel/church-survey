@@ -43,14 +43,22 @@ CFG.nameKey = n => String(n || '').replace(/\s+/g, '');
 CFG.phoneTail = p => String(p || '').replace(/\D/g, '').slice(-8); // 앞 010 제외 8자리
 // 이름 같고, 전화 뒤 8자리 중 6자리 이상 같으면 같은 사람 (한쪽 번호가 없으면 이름만으로 같은 사람)
 // 같은 사람 판정 순서: 이름 → 전화(뒤 8자리 중 6자리 이상) → 생년. 셋 다 맞아야 같은 사람, 하나라도 비어 있거나 다르면 다른 사람.
+// 같은 사람 판정(2026-09-08 확정): 이름이 같거나 한 글자만 다르고, 전화 뒤 8자리 중 6자리 이상 같으면 같은 사람. 생년은 보지 않음.
+// 전화가 한쪽이라도 없으면 비교 불가 → 다른 사람.
+CFG.nameClose = function (a, b) {
+  const na = CFG.nameKey(a), nb = CFG.nameKey(b);
+  if (na === nb) return true;
+  if (na.length !== nb.length || na.length < 2) return false;
+  let same = 0; for (let i = 0; i < na.length; i++) if (na[i] === nb[i]) same++;
+  return same === na.length - 1;
+};
 CFG.samePerson = function (a, b) {
-  if (CFG.nameKey(a.name) !== CFG.nameKey(b.name)) return false;
+  if (a.distinct || b.distinct) return false;
+  if (!CFG.nameClose(a.name, b.name)) return false;
   const pa = CFG.phoneTail(a.phone), pb = CFG.phoneTail(b.phone);
   if (pa.length < 8 || pb.length < 8) return false;
   let same = 0; for (let i = 0; i < 8; i++) if (pa[i] === pb[i]) same++;
-  if (same < 6) return false;
-  const ya = String(a.birth_year || '').trim(), yb = String(b.birth_year || '').trim();
-  return !!ya && !!yb && ya === yb;
+  return same >= 6;
 };
 
 // ---- 자녀 부서(생년 기준) — 부모가 동반으로 신청, 전체 집계 포함 + 별도 표시 ----
@@ -77,14 +85,8 @@ CFG.phoneMatches = function (a, b) {
   const pa = CFG.phoneTail(a), pb = CFG.phoneTail(b); if (pa.length < 8 || pb.length < 8) return 0;
   let n = 0; for (let i = 0; i < 8; i++) if (pa[i] === pb[i]) n++; return n;
 };
-CFG.likelyTypo = function (a, b) {
-  const na = CFG.nameKey(a.name), nb = CFG.nameKey(b.name);
-  if (na === nb || na.length !== nb.length || na.length < 2) return false;
-  let same = 0; for (let i = 0; i < na.length; i++) if (na[i] === nb[i]) same++;
-  if (same !== na.length - 1) return false;
-  if (CFG.phoneMatches(a.phone, b.phone) < 6) return false;
-  const ya = String(a.birth_year || '').trim(), yb = String(b.birth_year || '').trim();
-  return !ya || !yb || ya === yb;
+CFG.likelyTypo = function (a, b) { // 같은 사람인데 이름 철자만 다른 경우(표시·철자 통일용)
+  return CFG.nameKey(a.name) !== CFG.nameKey(b.name) && CFG.samePerson(a, b);
 };
 
 // 부서별 식사비(1인당). 관리자 화면·엑셀 요약에 인원×단가로 표시
