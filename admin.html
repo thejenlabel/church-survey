@@ -27,7 +27,6 @@
       <button class="btn" id="excel">전체 명단 엑셀</button>
       <button class="btn" id="busToggle">차량 탑승자</button>
       <button class="btn ghost" id="reload">새로고침</button>
-      <button class="btn ghost" id="logout">나가기</button>
     </div>
     <div class="hint" id="notice"></div>
   </div>
@@ -100,7 +99,6 @@ async function load() {
 }
 $('login').onclick = load;
 $('reload').onclick = load;
-$('logout').onclick = () => { sessionStorage.removeItem('pw'); location.reload(); };
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
 if (PW) load();
 
