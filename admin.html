@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=43">
+<link rel="stylesheet" href="style.css?v=44">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -124,6 +124,7 @@ $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
 if (PW) load();
 
 const keyOf = n => CFG.nameKey(n);
+const shortTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 // 사람 식별: 이름 같고 전화 규칙(뒤 8자리 중 6자리↑ 일치, 번호 없으면 이름만)에 맞으면 같은 사람 → 같은 식별키
 let IDMAP = new Map(); // member 객체 → 식별키
 function buildIdentity() {
@@ -251,20 +252,20 @@ function render() {
   };
   $('rows').innerHTML = list.map(s => `<tr>
     <td><b>${esc(s.name)}</b></td>
-    <td>${esc(s.group_type)}</td>
-    <td>${esc(s.sub_group) || '-'}</td>
+    <td class="wrap">${esc(s.group_type)}</td>
+    <td class="wrap">${esc(s.sub_group) || '-'}</td>
     <td>${s.members.length}</td>
     <td>${s.members.filter(m => m.meal && CFG.countsFor(m)).length}</td>
     <td>${s.members.filter(m => m.bus && CFG.countsFor(m)).length}</td>
     <td>${s.members.map(memHtml).join('')}</td>
-    <td style="white-space:nowrap;font-size:12px;color:#6b7280">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+    <td style="white-space:nowrap;font-size:12px;color:#6b7280">${shortTime(s.created_at)}</td>
     <td><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></td>
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
 
   // 모바일 카드
   $('cards').innerHTML = list.map(s => `<div class="scard">
     <div class="scard-h"><b>${esc(s.name)}</b><span class="scard-g">${esc(s.sub_group) || esc(s.group_type)}</span><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></div>
-    <div class="scard-n">식사 ${s.members.filter(m => m.meal && CFG.countsFor(m)).length}명 · 교회 차량 ${s.members.filter(m => m.bus && CFG.countsFor(m)).length}명<span class="scard-t">${new Date(s.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div>
+    <div class="scard-n">식사 ${s.members.filter(m => m.meal && CFG.countsFor(m)).length}명 · 교회 차량 ${s.members.filter(m => m.bus && CFG.countsFor(m)).length}명<span class="scard-t">${shortTime(s.created_at)}</span></div>
     ${s.members.map(memHtml).join('')}
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
 }
