@@ -48,7 +48,7 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .scard-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:16px}
 .scard-n{font-size:13px;color:#4A63A9;font-weight:600;margin:4px 0 8px}
 .scard-f{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-@media (max-width:700px){.topbar .btn{flex:1 1 45%}.mem{grid-template-columns:minmax(110px,auto) 56px 52px 52px auto;font-size:12px}.cards{display:block}.tbl{display:none}.stats{gap:6px}.stat{padding:10px 4px}.stat .n{font-size:22px}.stat .l{font-size:11px}.topbar .btn{flex:1}}
+@media (max-width:700px){#toolbar .topbar .btn{flex:1 1 100%;white-space:nowrap}.topbar .btn{flex:1 1 45%}.mem{grid-template-columns:minmax(110px,auto) 56px 52px 52px auto;font-size:12px}.cards{display:block}.tbl{display:none}.stats{gap:6px}.stat{padding:10px 4px}.stat .n{font-size:22px}.stat .l{font-size:11px}.topbar .btn{flex:1}}
 [hidden]{display:none!important}
 .back{border:0;background:none;color:#2E3A8C;font:inherit;font-weight:600;padding:0;margin:0 0 6px;cursor:pointer}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
