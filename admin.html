@@ -297,7 +297,7 @@ $('excel').onclick = async () => {
     ws.mergeCells(1, 1, 1, cols.length);
     const t = ws.getCell(1, 1); t.value = title; t.font = { name: 'Malgun Gothic', size: 14, bold: true, color: { argb: NAVY } }; t.alignment = { vertical: 'middle' };
     ws.getRow(1).height = 26;
-    ws.getCell(2, 1).value = `기준 ${fmtTime(Date.now())} · ${rows.length}건`; ws.getCell(2, 1).font = { name: 'Malgun Gothic', size: 9, color: { argb: 'FF6B7280' } };
+    ws.getCell(2, 1).value = `기준 ${fmtTime(Date.now())} · ${opts.sub || rows.length + '건'}`; ws.getCell(2, 1).font = { name: 'Malgun Gothic', size: 9, color: { argb: 'FF6B7280' } };
     const hr = ws.getRow(3); hr.values = cols.map(c => c.h); hr.height = 22;
     hr.eachCell(c => { c.font = { name: 'Malgun Gothic', bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
     rows.forEach((r, i) => {
@@ -333,7 +333,7 @@ $('excel').onclick = async () => {
   ];
   const bySub = {}; for (const s of DATA) { const key = s.group_type + (s.sub_group ? ' · ' + s.sub_group : ''); const o = bySub[key] = bySub[key] || { sub: key, n: 0, total: 0, meal: 0, bus: 0 }; o.n++; for (const m of s.members) { o.total++; if (m.meal && CFG.countsFor(m)) o.meal++; if (m.bus && CFG.countsFor(m)) o.bus++; } }
   const SUMCOLS = [{ h: '항목', k: 'k', w: 22 }, { h: '인원', k: 'v', w: 9, align: 'center' }, { h: '식사', k: 'meal', w: 9, align: 'center' }, { h: '교회차', k: 'bus', w: 9, align: 'center' }, { h: '비고', k: 'note', w: 52 }];
-  const ws0 = sheet('요약', '온가족예배 참석자 사전조사 · 요약', SUMCOLS, sumRows);
+  const ws0 = sheet('요약', '온가족예배 참석자 사전조사 · 요약', SUMCOLS, sumRows, { sub: `신청 ${DATA.length}건 · 참석 ${P.length}명` });
   ws0.autoFilter = undefined;
   ws0.addRow([]);
   const h2 = ws0.addRow(['소속별', '신청 건수', '총인원', '식사', '교회차']); h2.height = 22;
