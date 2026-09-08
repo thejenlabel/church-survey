@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=35">
+<link rel="stylesheet" href="style.css?v=36">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -66,7 +66,7 @@
   </div>
 </div>
 
-<script src="config.js?v=20"></script>
+<script src="config.js?v=21"></script>
 <script>
 const $ = id => document.getElementById(id);
 $('title').innerHTML = `<span class="t-full">${CFG.TITLE} </span>관리자 페이지`;
@@ -186,22 +186,24 @@ function render() {
   buildIdentity();
   const seen = new Map();
   for (const s of list) for (const m of s.members) {
-    const k = idOf(m); const prev = seen.get(k) || { meal: 0, bus: 0, ex: 0 };
+    const k = idOf(m); const prev = seen.get(k) || { meal: 0, bus: 0, ex: 0, young: 0 };
     const ok = CFG.countsFor(m);
-    seen.set(k, { meal: prev.meal || (m.meal && ok ? 1 : 0), bus: prev.bus || (m.bus && ok ? 1 : 0), ex: prev.ex || (!ok && (m.meal || m.bus) ? 1 : 0) });
+    seen.set(k, { meal: prev.meal || (m.meal && ok ? 1 : 0), bus: prev.bus || (m.bus && ok ? 1 : 0), ex: prev.ex || (!ok && (m.meal || m.bus) ? 1 : 0), young: prev.young || (CFG.isYoung(m.birth_year) ? 1 : 0) });
   }
   const people = [...seen.values()];
   const rawCount = list.reduce((a, s) => a + s.members.length, 0);
   const total = people.length, meal = people.filter(m => m.meal).length, bus = people.filter(m => m.bus).length;
+  const mealYoung = people.filter(m => m.meal && m.young).length, mealOlder = meal - mealYoung;
+  const mealTile = `<div class="stat stat-split"><div class="split"><div><div class="n">${mealOlder}</div><div class="l">초등생 이상<br>식사 인원</div></div><div class="sep"></div><div><div class="n">${mealYoung}</div><div class="l">유치부·영유아부<br>식사 인원</div></div></div><div class="l tot">식사 합계 ${meal}명</div></div>`;
   const excluded = people.filter(m => m.ex).length;
   const dupNote = rawCount > total ? ` · 중복 ${rawCount - total}명 제외` : '';
   const direct = list.length; // 세부소속 본인(신청자) 수
   $('stats').innerHTML = fg
     ? `<div class="stat"><div class="n">${direct}<span style="font-size:14px;color:#6b7280"> / ${total}</span></div><div class="l">참석인원(소속 본인) / 총인원(가족 포함${dupNote})</div></div>
-       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
+       ${mealTile}
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`
     : `<div class="stat"><div class="n">${total}</div><div class="l">총 참석 인원 (신청 ${direct}건${dupNote})</div></div>
-       <div class="stat"><div class="n">${meal}</div><div class="l">식사 인원</div></div>
+       ${mealTile}
        <div class="stat"><div class="n">${bus}</div><div class="l">교회차 인원</div></div>`;
 
   // 자녀 부서별 집계(같은 사람 1명으로)
@@ -323,11 +325,13 @@ $('excel').onclick = async () => {
   // ① 요약
   buildIdentity();
   const uniq = new Map();
-  for (const s of DATA) for (const m of s.members) { const k = idOf(m); const p = uniq.get(k) || { meal: 0, bus: 0, ex: 0, dept: CFG.kidDept(m.birth_year) }; const ok = CFG.countsFor(m); uniq.set(k, { ...p, meal: p.meal || (m.meal && ok ? 1 : 0), bus: p.bus || (m.bus && ok ? 1 : 0), ex: p.ex || (!ok && (m.meal || m.bus) ? 1 : 0) }); }
+  for (const s of DATA) for (const m of s.members) { const k = idOf(m); const p = uniq.get(k) || { meal: 0, bus: 0, ex: 0, dept: CFG.kidDept(m.birth_year) }; const ok = CFG.countsFor(m); uniq.set(k, { ...p, meal: p.meal || (m.meal && ok ? 1 : 0), bus: p.bus || (m.bus && ok ? 1 : 0), ex: p.ex || (!ok && (m.meal || m.bus) ? 1 : 0), young: p.young || (CFG.isYoung(m.birth_year) ? 1 : 0) }); }
   const P = [...uniq.values()];
   const cnt = f => P.filter(f).length;
   const sumRows = [
     { k: '총 참석 인원', v: P.length, meal: cnt(p => p.meal), bus: cnt(p => p.bus), note: `신청 ${DATA.length}건` },
+    { k: '식사 인원 · 초등생 이상', v: cnt(p => p.meal && !p.young), meal: cnt(p => p.meal && !p.young), bus: '-', note: '성인 + 초등부' },
+    { k: '식사 인원 · 유치부·영유아부', v: cnt(p => p.meal && p.young), meal: cnt(p => p.meal && p.young), bus: '-', note: '유치부 + 영유아부' },
     ...CFG.KIDS.map(kd => { const mealN = cnt(p => p.dept === kd.label && p.meal); const feeTxt = CFG.MEAL_FEE[kd.label] ? ` · 식사비 ${mealN}명 × ${CFG.MEAL_FEE[kd.label].toLocaleString()}원 = ${(mealN * CFG.MEAL_FEE[kd.label]).toLocaleString()}원` : ''; return { k: kd.label, v: cnt(p => p.dept === kd.label), meal: mealN, bus: cnt(p => p.dept === kd.label && p.bus), note: `${kd.from}~${kd.to}년생${feeTxt}` }; }),
     { k: `식사·교회차 미집계`, v: cnt(p => p.ex), meal: '-', bus: '-', note: `${CFG.EXCLUDE_BIRTH_FROM}년생 이후 출생자 중 식사·차량 체크 (집계 제외)` }
   ];
