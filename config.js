@@ -66,7 +66,7 @@ CFG.kidDept = function (birth_year) {
 
 // 식사·교회차 미집계 기준(출생연도): 이 해 이후 출생은 식사·교회차 인원에서 자동 제외(총 참석에는 포함).
 // 부모가 식사/차량을 체크한 경우에만 '미집계 인원'으로 따로 센다.
-CFG.EXCLUDE_BIRTH_FROM = 2025;
+CFG.EXCLUDE_BIRTH_FROM = 2024; // 2026-09-08 변경: 24년생 이후 식사·교회차 미집계(종전 25년)
 CFG.countsFor = function (m) {
   const y = parseInt(String(m.birth_year || '').trim(), 10);
   return !(CFG.EXCLUDE_BIRTH_FROM && y && y >= CFG.EXCLUDE_BIRTH_FROM);
@@ -86,3 +86,6 @@ CFG.likelyTypo = function (a, b) {
   const ya = String(a.birth_year || '').trim(), yb = String(b.birth_year || '').trim();
   return !ya || !yb || ya === yb;
 };
+
+// 부서별 식사비(1인당). 관리자 화면·엑셀 요약에 인원×단가로 표시
+CFG.MEAL_FEE = { "유치부": 12000 };

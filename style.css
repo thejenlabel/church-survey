@@ -191,3 +191,8 @@ body{background:#f7f8fb}
   .stats{margin:0 0 6px}
   .sec-list .filterrow{margin:0 0 10px}
 }
+
+.kid.fee{border-left-color:#9a5b00}
+.kid-fee{font-size:11px;color:#9a5b00;margin-top:3px;white-space:nowrap}
+.kid-fee b{font-weight:700}
+@media (max-width:700px){.kid-fee{font-size:10px;white-space:normal}}
