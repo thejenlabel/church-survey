@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=47">
+<link rel="stylesheet" href="style.css?v=48">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 </head>
@@ -13,24 +13,31 @@
   <button class="back" id="backTop" hidden>← 뒤로</button>
   <img src="logo.png" alt="이음교회" class="logo">
   <h1 id="title"></h1>
-  <div class="steps" id="steps"><span class="st on">1 본인 정보</span><span class="st">2 참석 인원</span></div>
+  <div class="steps" id="steps"><span class="st on">1 본인</span><span class="st">2 소속</span><span class="st">3 참석 인원</span></div>
 
-  <!-- 1단계 -->
+  <!-- 1단계: 이름·전화 -->
   <div class="card" id="step1">
     <label>이름</label>
     <input id="name" placeholder="홍길동" autocomplete="name" autofocus>
+    <label>전화번호</label>
+    <input id="phone" class="m-phone" inputmode="numeric" maxlength="13" placeholder="01012345678" autocomplete="tel">
+    <div class="err" id="err1"></div>
+    <button class="btn" id="next1">다음</button>
+  </div>
+
+  <!-- 2단계: 소속 -->
+  <div class="card" id="stepG" hidden>
     <label>소속</label>
     <select id="group"><option value="">선택하세요</option></select>
     <div id="subWrap" hidden>
       <label>세부소속</label>
       <select id="sub"></select>
     </div>
-    <div class="err" id="err1"></div>
-    <button class="btn" id="next">다음</button>
-    <button class="btn ghost wide" id="edit">이미 신청했어요 · 수정하기</button>
+    <div class="err" id="errG"></div>
+    <button class="btn" id="next2">다음</button>
   </div>
 
-  <!-- 2단계 -->
+  <!-- 3단계: 참석 인원 -->
   <div class="card" id="step2" hidden>
     <p style="margin:0 0 14px;font-weight:700" id="step2Title">본인 포함, 함께 참석하는 가족을 모두 적어 주세요</p>
     <div id="members"></div>
@@ -58,45 +65,98 @@
 <script src="config.js?v=24"></script>
 <script>
 const $ = id => document.getElementById(id);
-// 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거
+const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
+const rpc = async (fn, args) => { const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: H, body: JSON.stringify(args) }); if (!r.ok) throw new Error(await r.text()); const t = await r.text(); return t ? JSON.parse(t) : null; };
+
+// 이름은 띄어쓰기 불가(중복 방지) — 입력 즉시 공백 제거 · 전화는 대시 자동 · 생년은 부서 표시
 document.addEventListener('input', e => {
   if (e.target.matches('#name, .m-name') && /\s/.test(e.target.value)) e.target.value = e.target.value.replace(/\s+/g, '');
   if (e.target.matches('.m-phone')) { const f = CFG.fmtPhone(e.target.value); if (f !== e.target.value) e.target.value = f; }
   if (e.target.matches('.m-birth')) { const d = CFG.kidDept(e.target.value); const tag = e.target.parentElement.querySelector('.dept'); if (tag) tag.textContent = d ? d + ' (생년 기준 자동)' : ''; }
 });
-$('title').textContent = CFG.TITLE;
-function setStep(n) { const st = document.querySelectorAll('#steps .st'); st.forEach((el, i) => { el.classList.toggle('on', i + 1 === n); el.classList.toggle('done', i + 1 < n); }); $('steps').hidden = n === 3; }
-document.title = CFG.TITLE;
+$('title').textContent = CFG.TITLE; document.title = CFG.TITLE;
 
-// 선택형 안내창: choose(메시지, [{label, value, primary}]) → Promise<value>
+// 단계 표시: 1 본인 · 2 소속 · 3 인원 · 4 완료(숨김)
+function setStep(n) { const st = document.querySelectorAll('#steps .st'); st.forEach((el, i) => { el.classList.toggle('on', i + 1 === n); el.classList.toggle('done', i + 1 < n); }); $('steps').hidden = n === 4; }
+function show(id) { for (const s of ['step1', 'stepG', 'step2', 'done']) $(s).hidden = s !== id; $('backTop').hidden = id === 'step1'; window.scrollTo(0, 0); }
+
+// 선택형 안내창
 function choose(msg, btns) {
   return new Promise(resolve => {
-    $('modalMsg').textContent = msg;
-    $('modalBtns').innerHTML = '';
-    for (const b of btns) {
-      const el = document.createElement('button'); el.className = 'btn' + (b.primary ? '' : ' ghost'); el.textContent = b.label;
-      el.onclick = () => { $('modal').hidden = true; resolve(b.value); };
-      $('modalBtns').appendChild(el);
-    }
+    $('modalMsg').textContent = msg; $('modalBtns').innerHTML = '';
+    for (const b of btns) { const el = document.createElement('button'); el.className = 'btn' + (b.primary ? '' : ' ghost'); el.textContent = b.label; el.onclick = () => { $('modal').hidden = true; resolve(b.value); }; $('modalBtns').appendChild(el); }
     $('modal').hidden = false;
   });
 }
 
 // 소속 옵션
-for (const g of Object.keys(CFG.GROUPS)) {
-  const o = document.createElement('option'); o.value = g; o.textContent = g; $('group').appendChild(o);
-}
-const opt = s => `<option>${String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</option>`;
+for (const g of Object.keys(CFG.GROUPS)) { const o = document.createElement('option'); o.value = g; o.textContent = g; $('group').appendChild(o); }
 $('group').addEventListener('change', () => {
-  const g = $('group').value;
-  $('sub').innerHTML = '';
+  const g = $('group').value; $('sub').innerHTML = '';
   if (!CFG.hasSub(g)) { $('subWrap').hidden = true; return; }
   $('subWrap').hidden = false;
   $('sub').innerHTML = `<option value="">${CFG.GROUPS[g].hint}</option>` + CFG.subOptionsHtml(g);
 });
 
-// 2단계 명단
-let EDIT = null; // 수정 모드: { id, name }
+// 상태
+let ME = { name: '', phone: '' };   // 1단계 입력
+let EDIT = null;                    // 수정 모드: { id, name }
+let PULL = [];                      // 남의 신청서에 동반으로 들어 있던 본인 항목 [{sid, name}] → 저장 후 그쪽에서 뺀다
+
+// ===== 1단계: 이름·전화 → 기존 신청 확인 =====
+$('next1').onclick = async () => {
+  const name = $('name').value.replace(/\s+/g, ''), phone = CFG.fmtPhone($('phone').value);
+  if (!name) { $('err1').textContent = '이름을 입력해 주세요.'; $('name').focus(); return; }
+  if (CFG.phoneTail(phone).length < 8) { $('err1').textContent = '전화번호를 입력해 주세요.'; $('phone').focus(); return; }
+  $('err1').textContent = ''; $('next1').disabled = true;
+  ME = { name, phone }; EDIT = null; PULL = [];
+  try {
+    const sim = await rpc('find_similar', { p_tails: [CFG.phoneTail(phone)] }) || [];
+    const me = { name, phone };
+    const hits = sim.filter(x => CFG.samePerson(me, { name: x.person, phone: x.phone }));
+    // 1) 본인이 신청자로 낸 신청서가 있으면 → 수정 여부
+    const own = hits.find(x => x.is_self);
+    if (own) {
+      const exact = CFG.nameKey(own.person) === CFG.nameKey(name);
+      const msg = exact
+        ? `${own.person}님은 이미 입력이 되었습니다.\n수정을 원하십니까?`
+        : `혹시 ${own.person}님이신가요?\n같은 전화번호로 이미 신청한 내역이 있습니다.`;
+      const pick = await choose(msg, [{ label: exact ? '수정하기' : `네, ${own.person} 신청 수정`, value: 'edit', primary: true }, { label: exact ? '취소' : '아니요, 처음 신청합니다', value: 'new' }]);
+      if (pick === 'edit') { await startEdit(own.sid, phone); return; }
+      if (exact) return; // 취소
+    }
+    // 2) 남의 신청서에 동반으로만 있는 경우 → 새로 신청하고, 저장 후 그쪽에서 뺀다(조용히)
+    PULL = hits.filter(x => !x.is_self).map(x => ({ sid: x.sid, name: x.person }));
+    show('stepG'); setStep(2);
+  } catch (e) { $('err1').textContent = '확인 중 오류가 났습니다. 잠시 후 다시 시도해 주세요.'; console.error(e); }
+  finally { $('next1').disabled = false; }
+};
+
+// 수정 모드 진입: 기존 신청서 전부 불러오기
+async function startEdit(sid, phone) {
+  const list = await rpc('get_own', { p_id: sid, p_phone: phone }) || [];
+  if (!list.length) { await choose('수정할 정보가 없습니다.', [{ label: '확인', value: true, primary: true }]); return; }
+  const own = list[0];
+  EDIT = { id: own.id, name: own.name };
+  $('group').value = own.group_type; $('group').dispatchEvent(new Event('change')); if (CFG.hasSub(own.group_type)) $('sub').value = own.sub_group || '';
+  $('members').innerHTML = '';
+  own.members.forEach((m, i) => addMember(m.name, i === 0, m));
+  $('step2Title').textContent = '신청 내용 수정 — 인원 정보를 고치거나 삭제하세요';
+  $('submit').textContent = '수정 완료';
+  show('step2'); setStep(3);
+}
+
+// ===== 2단계: 소속 =====
+$('next2').onclick = () => {
+  const g = $('group').value;
+  if (!g) { $('errG').textContent = '소속을 선택해 주세요.'; $('group').focus(); return; }
+  if (CFG.hasSub(g) && !$('sub').value) { $('errG').textContent = '세부소속을 선택해 주세요.'; $('sub').focus(); return; }
+  $('errG').textContent = '';
+  if (!EDIT) { $('members').innerHTML = ''; addMember(ME.name, true, { phone: ME.phone }); $('step2Title').textContent = '본인 포함, 함께 참석하는 가족을 모두 적어 주세요'; $('submit').textContent = '완료'; }
+  show('step2'); setStep(3);
+};
+
+// ===== 3단계: 인원 =====
 function addMember(name = '', isSelf = false, data = null) {
   const d = document.createElement('div');
   d.className = 'member';
@@ -118,92 +178,45 @@ function addMember(name = '', isSelf = false, data = null) {
     g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
     g.previousElementSibling.value = b.dataset.v;
   }));
-  if (data) { // 수정 모드 프리필
+  if (data) {
     d.querySelector('.m-birth').value = data.birth_year || ''; d.querySelector('.m-phone').value = data.phone || '';
     for (const [cls, v] of [['m-meal', data.meal], ['m-bus', data.bus]]) { if (v === undefined || v === null || v === '') continue; const inp = d.querySelector('.' + cls); inp.value = String(+v); const b = inp.nextElementSibling.querySelector(`button[data-v="${+v}"]`); if (b) b.classList.add('on'); }
   }
   $('members').appendChild(d);
-  if (data) d.querySelector('.m-birth').dispatchEvent(new Event('input', { bubbles: true })); // 부서 표시(문서에 붙은 뒤)
+  if (data) d.querySelector('.m-birth').dispatchEvent(new Event('input', { bubbles: true }));
   const rm = d.querySelector('.rm:not(.self)'); if (rm) rm.onclick = () => d.remove();
   const rs = d.querySelector('.rm.self'); if (rs) rs.onclick = deleteOwn;
 }
+$('add').onclick = () => addMember();
 
 // 수정 모드: 본인 삭제 = 신청 전체 삭제
 async function deleteOwn() {
   const n = document.querySelectorAll('.member').length;
   const ok = await choose(`본인을 삭제하면 신청한 전체 인원(${n}명)이 모두 삭제됩니다.\n정말 삭제할까요?`, [{ label: '전체 삭제', value: true, primary: true }, { label: '취소', value: false }]);
   if (!ok) return;
-  const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY };
-  const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/delete_own', { method: 'POST', headers: H, body: JSON.stringify({ p_id: EDIT.id, p_name: EDIT.name }) });
-  if (!r.ok) { $('err2').textContent = '삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.'; return; }
-  $('step2').hidden = true; $('done').hidden = false; setStep(3);
+  try { await rpc('delete_own', { p_id: EDIT.id, p_name: EDIT.name }); }
+  catch (e) { $('err2').textContent = '삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.'; return; }
+  show('done'); setStep(4);
   $('done').querySelector('p').textContent = '신청이 삭제되었습니다';
   $('summary').innerHTML = `${EDIT.name}님의 신청(${n}명)을 모두 삭제했습니다.`;
-  window.scrollTo(0, 0);
 }
 
-// 수정하기: 이름·소속·세부소속으로 본인 신청서 찾기
-$('edit').onclick = async () => {
-  const name = $('name').value.replace(/\s+/g, ''), g = $('group').value;
-  if (!name) { $('err1').textContent = '이름을 입력해 주세요.'; $('name').focus(); return; }
-  if (!g) { $('err1').textContent = '소속을 선택해 주세요.'; $('group').focus(); return; }
-  if (CFG.hasSub(g) && !$('sub').value) { $('err1').textContent = '세부소속을 선택해 주세요.'; $('sub').focus(); return; }
-  $('err1').textContent = ''; $('edit').disabled = true;
-  const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY };
-  try {
-    const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_own', { method: 'POST', headers: H, body: JSON.stringify({ p_name: name, p_group: g, p_sub: CFG.hasSub(g) ? $('sub').value : '' }) });
-    const list = r.ok ? await r.json() : [];
-    if (!list.length) { await choose('수정할 정보가 없습니다.\n이름·소속·세부소속이 신청할 때와 같은지 확인해 주세요.', [{ label: '확인', value: true, primary: true }]); return; }
-    let own = list[0];
-    if (list.length > 1) { // 동명이인: 생년·전화로 고르기
-      const mask = p => p ? p.replace(/(\d{3})-?\d{4}-?(\d{4})/, '$1-****-$2') : '번호 없음';
-      const pick = await choose('같은 이름의 신청이 여러 건 있습니다. 본인 것을 골라 주세요.', list.map((x, i) => ({ label: `${x.name} (${x.members[0]?.birth_year || '생년 없음'} · ${mask(x.members[0]?.phone)}) · ${x.members.length}명`, value: i, primary: i === 0 })).concat([{ label: '취소', value: -1 }]));
-      if (pick < 0) return; own = list[pick];
-    }
-    EDIT = { id: own.id, name: own.name };
-    $('members').innerHTML = '';
-    own.members.forEach((m, i) => addMember(m.name, i === 0, m));
-    $('step2Title').textContent = '신청 내용 수정 — 인원 정보를 고치거나 삭제하세요';
-    $('submit').textContent = '수정 완료';
-    $('step1').hidden = true; $('step2').hidden = false; $('backTop').hidden = false;
-    setStep(2); window.scrollTo(0, 0);
-  } catch (e) { $('err1').textContent = '불러오기에 실패했습니다. 잠시 후 다시 시도해 주세요.'; console.error(e); }
-  finally { $('edit').disabled = false; }
+// 뒤로
+$('backTop').onclick = () => {
+  if (!$('done').hidden) { location.reload(); return; }
+  if (!$('step2').hidden) { if (EDIT) { location.reload(); return; } show('stepG'); setStep(2); return; }
+  if (!$('stepG').hidden) { show('step1'); setStep(1); }
 };
 
-$('next').onclick = () => {
-  const name = $('name').value.replace(/\s+/g, ''), g = $('group').value;
-  const needSub = CFG.hasSub(g);
-  if (!name) { $('err1').textContent = '이름을 입력해 주세요.'; $('name').focus(); return; }
-  if (!g) { $('err1').textContent = '소속을 선택해 주세요.'; $('group').focus(); return; }
-  if (needSub && !$('sub').value) { $('err1').textContent = '세부소속을 선택해 주세요.'; $('sub').focus(); return; }
-  $('err1').textContent = '';
-  EDIT = null; $('step2Title').textContent = '본인 포함, 함께 참석하는 가족을 모두 적어 주세요'; $('submit').textContent = '완료';
-  $('members').innerHTML = '';
-  addMember(name, true);
-  $('step1').hidden = true; $('step2').hidden = false; $('backTop').hidden = false;
-  setStep(2);
-  window.scrollTo(0, 0);
-};
-$('add').onclick = () => addMember();
-function goStep1() { $('step2').hidden = true; $('done').hidden = true; $('step1').hidden = false; setStep(1); $('backTop').hidden = true; }
-$('backTop').onclick = () => { if (!$('done').hidden) location.reload(); else goStep1(); };
-
+// 완료
 $('submit').onclick = async () => {
   const rows = [...document.querySelectorAll('.member')];
   const members = [];
+  const fail = msg => { $('err2').textContent = msg; $('err2').scrollIntoView({ block: 'center', behavior: 'smooth' }); };
   for (const r of rows) {
-    const m = {
-      name: r.querySelector('.m-name').value.replace(/\s+/g, ''),
-      birth_year: r.querySelector('.m-birth').value.trim(),
-      phone: CFG.fmtPhone(r.querySelector('.m-phone').value),
-      meal: r.querySelector('.m-meal').value,
-      bus: r.querySelector('.m-bus').value
-    };
-    // 아무것도 안 적은 동반 칸은 건너뜀(인원 추가만 누르고 안 쓴 경우)
+    const m = { name: r.querySelector('.m-name').value.replace(/\s+/g, ''), birth_year: r.querySelector('.m-birth').value.trim(), phone: CFG.fmtPhone(r.querySelector('.m-phone').value), meal: r.querySelector('.m-meal').value, bus: r.querySelector('.m-bus').value };
     const isSelf = r === rows[0];
     if (!isSelf && !m.name && !m.birth_year && !m.phone && m.meal === '' && m.bus === '') { r.remove(); continue; }
-    const fail = msg => { $('err2').textContent = msg; $('err2').scrollIntoView({ block: 'center', behavior: 'smooth' }); return true; };
     if (!m.name) return fail('이름이 비어 있는 칸이 있습니다.');
     if (isSelf && !/^\d{4}$/.test(m.birth_year)) return fail('본인 생년 4자리를 입력해 주세요.');
     if (isSelf && CFG.phoneTail(m.phone).length < 8) return fail('본인 전화번호를 입력해 주세요.');
@@ -212,90 +225,32 @@ $('submit').onclick = async () => {
     members.push(m);
   }
   $('err2').textContent = '';
-  $('submit').disabled = true; $('submit').textContent = '저장 중…';
+  $('submit').disabled = true; const label = $('submit').textContent; $('submit').textContent = '저장 중…';
   const g = $('group').value;
-  const body = { name: $('name').value.replace(/\s+/g, ''), group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
-  const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
-  if (EDIT) { // 수정 모드: 본인 신청서를 이번 내용으로 교체
-    try {
-      const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/replace_submission_by_id', { method: 'POST', headers: H, body: JSON.stringify({ p_id: EDIT.id, p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members }) });
-      if (!r.ok) throw new Error(await r.text());
-      $('step2').hidden = true; $('done').hidden = false; setStep(3);
-      $('done').querySelector('p').textContent = '수정되었습니다';
-      const meal = members.filter(m => m.meal).length, bus = members.filter(m => m.bus).length;
-      $('summary').innerHTML = `<b>총 ${members.length}명 참석</b> · 식사 ${meal}명 · 교회 차량 ${bus}명<ul class="done-list">${members.map(m => `<li>${m.name}${m.birth_year ? ' (' + m.birth_year + ')' : ''} — ${m.meal ? '식사함' : '식사안함'} · ${m.bus ? '교회차량' : '차량불필요'}</li>`).join('')}</ul>`;
-      window.scrollTo(0, 0);
-    } catch (e) { $('err2').textContent = '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'; $('submit').disabled = false; $('submit').textContent = '수정 완료'; console.error(e); }
-    return;
-  }
+  const body = { name: members[0].name, group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   try {
-    // 0) 오타 재확인: 전화가 비슷한 기존 등록자 중 이름이 한 글자만 다른 사람이 있으면 묻는다
-    const tails = [...new Set(members.map(m => CFG.phoneTail(m.phone)).filter(t => t.length === 8))];
-    if (tails.length) {
-      const fs = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_similar', { method: 'POST', headers: H, body: JSON.stringify({ p_tails: tails }) });
-      const sim = fs.ok ? await fs.json() : [];
-      for (const m of members) {
-        const c = sim.find(x => CFG.likelyTypo(m, { name: x.person, phone: x.phone }));
-        if (!c) continue;
-        // 같은 사람(전화 일치, 이름 한 글자 차이) → 기존 철자로 통일
-        m.name = c.person; if (m === members[0]) body.name = c.person;
-        const r = document.querySelectorAll('.member')[members.indexOf(m)]; if (r) r.querySelector('.m-name').value = c.person;
-      }
-    }
-    // 본인·동반 이름으로 기존 등록자 조회 → 같은 사람 판정(이름·생년·전화)
-    const fp = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/find_persons', { method: 'POST', headers: H, body: JSON.stringify({ p_names: members.map(m => m.name) }) });
-    const found = fp.ok ? await fp.json() : [];
-    const asPerson = f => ({ name: f.person, phone: f.phone, birth_year: f.birth_year, distinct: f.distinct });
-    let res, replaceId = null;
-    // 1) 본인이 직접 낸 기존 신청서가 있으면 → 교체
-    const own = found.find(f => f.is_self && CFG.samePerson(members[0], asPerson(f)));
-    if (own) {
-      const c = await choose(`${body.name}님은 이미 제출한 신청이 있습니다.\n\n[수정하기]를 누르면 기존 신청이 이번 내용(참석 인원·식사·차량)으로 바뀝니다.`, [
-        { label: '수정하기', value: 'update', primary: true }, { label: '취소', value: 'cancel' }]);
-      if (c !== 'update') { $('submit').disabled = false; $('submit').textContent = '완료'; return; }
-      replaceId = own.sid;
-    }
-    // 2) 그 외 이미 다른 신청서에 들어 있는 같은 사람 → 그 자리의 정보를 이번 내용으로 수정
-    const others = found.filter(f => !(own && f.sid === own.sid));
-    const matchOf = m => others.filter(f => CFG.samePerson(m, asPerson(f)));
-    const dupList = members.map(m => ({ m, hits: matchOf(m) })).filter(x => x.hits.length);
-    let updated = [];
-    if (dupList.length) {
-      const dupNames = dupList.map(x => `${x.m.name}님 (${[...new Set(x.hits.map(h => h.submitter))].join(', ')}님 신청서)`);
-      const rest = members.filter(m => !dupList.some(x => x.m === m));
-      const c2 = await choose(`아래 분은 이미 다른 신청서에 등록되어 있습니다.\n\n${dupNames.join('\n')}\n\n[수정하기]를 누르면 식사·차량 등 정보가 이번 내용으로 바뀝니다.`, [
-        { label: '수정하기', value: 'update', primary: true }, { label: '취소', value: 'cancel' }]);
-      if (c2 !== 'update') { $('submit').disabled = false; $('submit').textContent = '완료'; return; }
-      {
-        for (const x of dupList) for (const h of x.hits) {
-          const u = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/update_member', { method: 'POST', headers: H, body: JSON.stringify({ p_sid: h.sid, p_name: x.m.name, p_member: x.m }) });
-          if (!u.ok) throw new Error(await u.text());
-        }
-        updated = dupList.map(x => x.m);
-        if (!rest.length) {
-          $('step2').hidden = true; $('done').hidden = false; setStep(3);
-          $('summary').textContent = `${updated.map(m => m.name).join(', ')}님의 식사·차량 정보를 수정했습니다.`;
-          window.scrollTo(0, 0); return;
-        }
-        members.length = 0; members.push(...rest); body.members = members;
-        if (body.name !== members[0].name) body.name = members[0].name; // 본인이 빠졌으면 첫 사람을 신청자로
-      }
-    }
-    if (replaceId) {
-      res = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/replace_submission_by_id', { method: 'POST', headers: H, body: JSON.stringify({ p_id: replaceId, p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members }) });
+    if (EDIT) {
+      await rpc('replace_submission_by_id', { p_id: EDIT.id, p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members });
+      $('done').querySelector('p').textContent = '수정되었습니다';
     } else {
-      res = await fetch(CFG.SUPABASE_URL + '/rest/v1/submissions', { method: 'POST', headers: H, body: JSON.stringify(body) });
+      const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/submissions', { method: 'POST', headers: H, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error(await r.text());
+      // 남의 신청서에 동반으로 들어 있던 본인(과 이번에 적은 가족) 항목은 그쪽에서 뺀다 → 소속·정보는 본인 신청서가 정본
+      const pulls = [...PULL];
+      try {
+        const tails = [...new Set(members.slice(1).map(m => CFG.phoneTail(m.phone)).filter(t => t.length === 8))];
+        const sim = tails.length ? (await rpc('find_similar', { p_tails: tails }) || []) : [];
+        for (const m of members.slice(1)) for (const x of sim) if (!x.is_self && CFG.samePerson(m, { name: x.person, phone: x.phone, birth_year: x.birth_year })) pulls.push({ sid: x.sid, name: x.person });
+      } catch (e) { console.error(e); }
+      for (const p of pulls) { try { await rpc('remove_member', { p_sid: p.sid, p_name: p.name }); } catch (e) { console.error(e); } }
+      $('done').querySelector('p').textContent = '제출되었습니다';
     }
-    if (!res.ok) throw new Error(await res.text());
-    $('step2').hidden = true; $('done').hidden = false; setStep(3);
     const meal = members.filter(m => m.meal).length, bus = members.filter(m => m.bus).length;
-    $('summary').innerHTML = `<b>총 ${members.length}명 참석</b> · 식사 ${meal}명 · 교회 차량 ${bus}명` + (updated.length ? `<br><small>${updated.map(m => m.name).join(', ')}님은 기존 정보를 수정했습니다</small>` : '')
-      + `<ul class="done-list">${members.map(m => `<li>${m.name}${m.birth_year ? ' (' + m.birth_year + ')' : ''} — ${m.meal ? '식사함' : '식사안함'} · ${m.bus ? '교회차량' : '차량불필요'}</li>`).join('')}</ul>`;
-    window.scrollTo(0, 0);
+    $('summary').innerHTML = `<b>총 ${members.length}명 참석</b> · 식사 ${meal}명 · 교회 차량 ${bus}명<ul class="done-list">${members.map(m => `<li>${m.name}${m.birth_year ? ' (' + m.birth_year + ')' : ''} — ${m.meal ? '식사함' : '식사안함'} · ${m.bus ? '교회차량' : '차량불필요'}</li>`).join('')}</ul>`;
+    show('done'); setStep(4);
   } catch (e) {
     $('err2').textContent = '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-    $('submit').disabled = false; $('submit').textContent = '완료';
-    console.error(e);
+    $('submit').disabled = false; $('submit').textContent = label; console.error(e);
   }
 };
 </script>

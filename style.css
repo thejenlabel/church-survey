@@ -99,6 +99,7 @@ th.sortable:hover{text-decoration:underline}
 
 /* 전수조사 반영 */
 .steps{display:flex;gap:6px;margin:0 0 16px}
+.steps .st{font-size:12px;padding:7px 2px;white-space:nowrap}
 .st{flex:1;text-align:center;font-size:13px;font-weight:600;color:#9ca3af;padding:7px 4px;border-radius:8px;background:#e9edf5}
 .st.on{background:#2E3A8C;color:#fff}.st.done{background:#c9d3ec;color:#2E3A8C}
 label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
