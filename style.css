@@ -40,7 +40,7 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .mem .c-name small{color:#6b7280}
 .mem .c-phone{color:#6b7280;font-size:12px;white-space:nowrap}
 .mem .badge{margin:0}
-.topbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .topbar input{flex:1;min-width:160px}
 .topbar .btn{width:auto;margin:0;padding:11px 16px}
 @media (max-width:600px){.filters{grid-template-columns:1fr}.member .row{grid-template-columns:1fr}}
@@ -54,7 +54,7 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
   h1{font-size:17px;margin:0 0 10px}
   .t-full{display:none}
   .card{padding:12px;margin-bottom:8px;border-radius:10px}
-  #toolbar .topbar{gap:6px}#toolbar .topbar .btn{flex:1 1 0;padding:10px 4px;font-size:13px;white-space:nowrap}
+  #toolbar .topbar{gap:8px}#toolbar .topbar .btn{flex:1 1 auto;padding:10px 14px;font-size:13px;white-space:nowrap}
   .stats{gap:6px;margin-bottom:8px}.stat{padding:8px 4px;border-radius:10px}.stat .n{font-size:22px;line-height:1.1}.stat .l{font-size:11px}
   .kids{grid-template-columns:repeat(4,1fr);gap:6px}.kid{padding:6px 4px;text-align:center}.kid-l{font-size:11px}.kid-l small{display:inline;margin-left:2px}.kid-n{font-size:18px;margin:2px 0 0}.kid-s{font-size:10px}
   .filters.three{grid-template-columns:1fr 1fr;gap:6px}.filters .span2{grid-column:1/-1}
