@@ -7,9 +7,9 @@
 - 관리자 비밀번호: Supabase `admin_config` 테이블의 `password` 값 (현재 eeum2026)
 
 ## 배포
-- 공개 주소(Netlify): https://ieum-family-worship.netlify.app (site id 560d0940-426c-44f4-958a-3dd5c7096071, 팀 zueisong)
-- 재배포: 코드 수정 후 이 폴더에서 Netlify MCP `deploy-site`가 주는 `npx -y @netlify/mcp@latest --site-id ... --proxy-path ...` 명령 실행
-- GitHub Pages(https://thejenlabel.github.io/church-survey/)는 백업용으로 남아 있음
+- **공개 주소(Vercel): https://ieum-family-worship.vercel.app** (프로젝트 ieum-family-worship, 2026-09-08 Netlify 무료 크레딧 소진으로 이전)
+- 재배포: 이 폴더에서 `npx -y vercel@latest deploy --prod --yes`
+- 옛 주소: Netlify https://ieum-family-worship.netlify.app (크레딧 소진, 정지 가능) · GitHub Pages https://thejenlabel.github.io/church-survey/ (백업)
 
 ## 집계 규칙
 - 자녀 부서: 생년 기준 자동(초등부 2014~2019 · 유치부 2020~2023 · 영유아부 2024~2026), `config.js` `CFG.KIDS`
