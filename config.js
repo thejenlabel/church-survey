@@ -58,7 +58,13 @@ CFG.samePerson = function (a, b) {
   const pa = CFG.phoneTail(a.phone), pb = CFG.phoneTail(b.phone);
   if (pa.length < 8 || pb.length < 8) return false;
   let same = 0; for (let i = 0; i < 8; i++) if (pa[i] === pb[i]) same++;
-  return same >= 6;
+  if (same < 6) return false;
+  // 이름이 한 글자 다른 경우에만 생년을 본다: 둘 다 있고 다르면 형제 → 다른 사람
+  if (CFG.nameKey(a.name) !== CFG.nameKey(b.name)) {
+    const ya = String(a.birth_year || '').trim(), yb = String(b.birth_year || '').trim();
+    if (ya && yb && ya !== yb) return false;
+  }
+  return true;
 };
 
 // ---- 자녀 부서(생년 기준) — 부모가 동반으로 신청, 전체 집계 포함 + 별도 표시 ----
