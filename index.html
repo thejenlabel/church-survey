@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사</title>
-<link rel="stylesheet" href="style.css?v=48">
+<link rel="stylesheet" href="style.css?v=49">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 </head>
@@ -65,6 +65,7 @@
 <script src="config.js?v=26"></script>
 <script>
 const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const H = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY, Prefer: 'return=minimal' };
 const rpc = async (fn, args) => { const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: H, body: JSON.stringify(args) }); if (!r.ok) throw new Error(await r.text()); const t = await r.text(); return t ? JSON.parse(t) : null; };
 
@@ -162,7 +163,18 @@ function addMember(name = '', isSelf = false, data = null) {
   d.className = 'member';
   const seg = (cls, opts) => `<input type="hidden" class="${cls}"><div class="seg">${opts.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('')}</div>`;
   const selfBtn = isSelf && EDIT ? '<button type="button" class="rm self" aria-label="본인 삭제">본인 삭제</button>' : '';
-  d.innerHTML = `
+  // 본인(새 신청)은 1단계에서 이름·전화를 이미 받았으므로 다시 묻지 않고 한 줄로 보여준다
+  const selfFixed = isSelf && !EDIT;
+  d.innerHTML = selfFixed ? `
+    <div class="member-h"><h4>본인</h4></div>
+    <div class="self-line"><b>${esc(name)}</b><span>${esc(data && data.phone || '')}</span></div>
+    <input type="hidden" class="m-name"><input type="hidden" class="m-phone">
+    <div class="row">
+      <div><label>생년 (4자리) <em>필수</em></label><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><div class="dept hint"></div></div>
+      <div class="row-gap"></div>
+      <div><label>식사</label>${seg('m-meal', CFG.MEAL)}</div>
+      <div><label>교회 차량</label>${seg('m-bus', CFG.BUS)}</div>
+    </div>` : `
     <div class="member-h"><h4>${isSelf ? '본인' : '동반 가족'}</h4>${isSelf ? selfBtn : '<button type="button" class="rm" aria-label="삭제">삭제</button>'}</div>
     <div class="row">
       <div><label>이름</label><input class="m-name" placeholder="이름" autocomplete="off"></div>

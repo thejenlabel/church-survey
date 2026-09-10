@@ -265,3 +265,6 @@ body{background:#f7f8fb}
 
 .btn.ghost.wide{width:100%;margin-top:10px;padding:12px}
 .member .rm.self{color:#dc2626;border-color:#fca5a5}
+
+.self-line{display:flex;gap:10px;align-items:baseline;font-size:15px;margin:2px 0 4px}
+.self-line span{color:#6b7280;font-size:14px}
