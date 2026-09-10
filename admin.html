@@ -156,7 +156,13 @@ async function dedupe(auto) {
     keep[k] = own ? own.id : sorted.find(s => s.members.some(m => idOf(m) === k)).id;
   }
   for (const s of sorted) {
-    const nm = s.members.filter(m => !(dups.includes(idOf(m)) && keep[idOf(m)] !== s.id));
+    const seenHere = new Set();
+    const nm = s.members.filter(m => {
+      const k = idOf(m);
+      if (dups.includes(k) && keep[k] !== s.id) return false;      // 다른 신청서(본인 것 우선)에 있는 사람 → 여기서 뺌
+      if (seenHere.has(k)) return false;                            // 같은 신청서 안에 두 번 → 뒤의 것 뺌
+      seenHere.add(k); return true;
+    });
     if (nm.length !== s.members.length) plan.push({ id: s.id, name: s.name, members: nm });
   }
   const desc = plan.map(p => `${p.name} 신청서 ${DATA.find(s => s.id === p.id).members.length}명 → ${p.members.length}명${p.members.length ? '' : ' (삭제)'}`).join(', ');

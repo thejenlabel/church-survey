@@ -226,13 +226,26 @@ $('submit').onclick = async () => {
     m.meal = +m.meal; m.bus = +m.bus;
     members.push(m);
   }
+  // 한 신청서 안에 같은 사람이 두 번 들어가는 것 방지
+  for (let i = 0; i < members.length; i++) for (let j = i + 1; j < members.length; j++) {
+    if (CFG.samePerson(members[i], members[j])) return fail(`${members[i].name}님과 ${members[j].name}님이 같은 사람으로 보입니다(이름·전화 동일). 한 명만 남겨 주세요.`);
+    if (CFG.nameKey(members[i].name) === CFG.nameKey(members[j].name) && members[i].birth_year === members[j].birth_year) return fail(`${members[i].name}님이 두 번 들어 있습니다. 한 명만 남겨 주세요.`);
+  }
   $('err2').textContent = '';
   $('submit').disabled = true; const label = $('submit').textContent; $('submit').textContent = '저장 중…';
   const g = $('group').value;
   const body = { name: members[0].name, group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   try {
     if (EDIT) {
+      // 수정 모드에서도 새로 적은 가족이 남의 신청서에 동반으로 있으면 그쪽에서 뺀다(본인 신청서 id는 제외)
+      const pulls = [];
+      try {
+        const tails = [...new Set(members.slice(1).map(m => CFG.phoneTail(m.phone)).filter(t => t.length === 8))];
+        const sim = tails.length ? (await rpc('find_similar', { p_tails: tails }) || []) : [];
+        for (const m of members.slice(1)) for (const x of sim) if (x.sid !== EDIT.id && !x.is_self && CFG.samePerson(m, { name: x.person, phone: x.phone, birth_year: x.birth_year })) pulls.push({ sid: x.sid, name: x.person });
+      } catch (e) { console.error(e); }
       await rpc('replace_submission_by_id', { p_id: EDIT.id, p_name: body.name, p_group: body.group_type, p_sub: body.sub_group, p_members: members });
+      for (const p of pulls) { try { await rpc('remove_member', { p_sid: p.sid, p_name: p.name }); } catch (e) { console.error(e); } }
       $('done').querySelector('p').textContent = '수정되었습니다';
     } else {
       // 남의 신청서에 동반으로 들어 있던 본인·가족 항목을 먼저 찾아 둔다(저장 전에 조회 → 본인 신청서는 아직 없으므로 안전)
