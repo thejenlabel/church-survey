@@ -97,7 +97,7 @@ CFG.likelyTypo = function (a, b) { // 같은 사람인데 이름 철자만 다�
 };
 
 // 부서별 식사비(1인당). 관리자 화면·엑셀 요약에 인원×단가로 표시
-CFG.MEAL_FEE = { older: 20000, young: 12000 }; // 초등생 이상 20,000원 · 유치부 12,000원
+CFG.MEAL_FEE = { older: 14000, young: 12000 }; // 초등생 이상 14,000원 · 유치부 12,000원 (2026-09-10 변경, 종전 20,000)
 
 // 식사 인원 분리 기준: 유치부·영유아부(초등 미만) = young
 CFG.isYoung = function (birth_year) { return CFG.kidDept(birth_year) === '유치부'; }; // 영유아부(24년생~)는 식사 미집계
