@@ -131,7 +131,7 @@ function buildIdentity() {
   IDMAP = new Map(); const reps = []; // {key, name, phone}
   for (const s of DATA) for (const m of s.members) {
     let rep = reps.find(r => CFG.samePerson(r, m));
-    if (!rep) { rep = { key: keyOf(m.name) + '#' + reps.length, name: m.name, phone: m.phone }; reps.push(rep); }
+    if (!rep) { rep = { key: keyOf(m.name) + '#' + reps.length, name: m.name, phone: m.phone, birth_year: m.birth_year }; reps.push(rep); }
     else if (!CFG.phoneTail(rep.phone) && CFG.phoneTail(m.phone)) rep.phone = m.phone;
     IDMAP.set(m, rep.key);
   }
