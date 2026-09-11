@@ -268,3 +268,7 @@ body{background:#f7f8fb}
 
 .self-line{display:flex;gap:10px;align-items:baseline;font-size:15px;margin:2px 0 4px}
 .self-line span{color:#6b7280;font-size:14px}
+
+.year-wrap{position:relative}
+.year-wrap input{padding-right:34px}
+.year-wrap span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#374151;font-size:15px;pointer-events:none}
