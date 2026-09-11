@@ -272,3 +272,16 @@ body{background:#f7f8fb}
 .year-wrap{position:relative}
 .year-wrap input{padding-right:34px}
 .year-wrap span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#374151;font-size:15px;pointer-events:none}
+
+/* 관리자 수정 오버레이 */
+.editor-box{max-width:560px;max-height:92vh;overflow:auto}
+.editor-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.editor-h .btn.ghost{margin:0;padding:6px 12px}
+.acts{display:inline-flex;gap:6px;align-items:center}
+.btn.edit{background:#fff;color:#2E3A8C;border:1px solid #4A63A9;width:auto;padding:4px 10px;font-size:12px;margin:0;font-weight:600}
+.scard-h .btn.edit{height:28px;padding:0 10px;line-height:26px}
+.editor-box .member{margin-bottom:10px}
+.editor-box .btn.ghost#edAdd{margin-top:4px}
+
+.ed-nav{display:flex;gap:8px;margin-top:14px}.ed-nav .btn{margin:0;flex:1}.ed-nav .btn.ghost{flex:0 0 auto;padding:12px 16px}
+#edSteps{margin:4px 0 14px}
