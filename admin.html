@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=69">
+<link rel="stylesheet" href="style.css?v=70">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -302,8 +302,8 @@ function render() {
     const go = CFG.busGo(m), back = CFG.busBack(m);
     if (!go && !back) return '<span class="badge leg none">안 탐</span>';
     let h = '';
-    if (go) h += '<span class="badge leg go">교회 &gt; 현지</span>';
-    if (back) h += `<span class="badge leg back">현지 &gt; 교회 (${back === 'early' ? '1시' : '끝나고'})</span>`;
+    if (go) h += '<span class="badge leg out">교회 &gt; 현지</span>';
+    if (back) h += `<span class="badge leg ret">현지 &gt; 교회 (${back === 'early' ? '1시' : '끝나고'})</span>`;
     return h;
   };
   const memHtml = m => {
