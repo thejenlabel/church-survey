@@ -132,7 +132,7 @@ label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
 .scard .mem .c-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:#1c1f24}
 .scard .mem .c-name small{color:#6b7280;font-size:12px}
 .scard .mem .c-dept,.scard .mem .c-meal,.scard .mem .c-bus{display:flex;justify-content:center}
-.scard .mem .badge{width:100%;text-align:center;margin:0;padding:1px 5px;font-size:10px;line-height:1.35}
+.scard .mem .badge{width:100%;text-align:center;margin:0;padding:1px 5px;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scard .mem .c-phone{text-align:right;font-size:13px;color:#374151;font-variant-numeric:tabular-nums;white-space:nowrap}
 @media (max-width:700px){
   .scard{padding:12px}
@@ -323,7 +323,7 @@ tr.youth-row td{background:#fffbeb}
 /* 차량 구간 표시: 갈 때 / 올 때 */
 /* 명단 배지 통일: 같은 크기·모양, 색으로만 구분 */
 /* 명단 배지: 크기·모양 통일, 투명 배경에 색으로 구분 */
-.c-meal .badge, .c-bus .badge{width:100%;text-align:center;margin:0;padding:1px 5px;font-size:10px;line-height:1.35;white-space:nowrap;border:1px solid transparent;border-radius:999px;font-weight:600}
+.c-meal .badge, .c-bus .badge{width:100%;text-align:center;margin:0;padding:1px 5px;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;border-radius:999px;font-weight:600}
 .c-meal .badge:not(.no){background:rgba(46,58,140,.08);border-color:#c3cbe8;color:#2E3A8C}
 .c-meal .badge.no, .badge.leg.none{background:#fff;border-color:#e3e7ef;color:#a8aebd}
 .c-bus{flex-direction:column;gap:2px}
