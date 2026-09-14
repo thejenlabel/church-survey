@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=56">
+<link rel="stylesheet" href="style.css?v=57">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -44,6 +44,7 @@
     <div class="card sec sec-list" id="busView" hidden>
       <div class="tabs legs" id="legTabs" hidden></div>
       <div class="bus-head"><b id="busTitle">차량 탑승자</b> <span class="hint" id="busSummary"></span></div>
+      <div class="undo-bar" id="undoBar" hidden><span id="undoMsg"></span><button type="button" class="btn ghost" id="undoBtn">되돌리기</button></div>
       <div class="bus-cols" id="busCols" hidden>
         <div class="bus-col"><div class="bus-col-h">미탑승 <span id="cntWait"></span></div><div id="busWait"></div></div>
         <div class="bus-col on"><div class="bus-col-h">탑승 <span id="cntDone"></span></div><div id="busDone"></div></div>
@@ -468,9 +469,10 @@ function renderBus() {
     <span class="r-name">${esc(r.m.name)}${r.m.birth_year ? ' <small>(' + esc(r.m.birth_year) + ')</small>' : ''}${CFG.busLegacy(r.m) && LEG !== 'go' ? ' <span class="badge no">왕복 신청</span>' : ''}</span>
     <span class="r-phone">${esc(r.m.phone || '')}</span>
     <span class="r-sub">${esc(r.s.name)}${r.s.name !== r.m.name ? ' 신청' : ''} · ${esc(r.s.sub_group || r.s.group_type)}</span>
-    <button class="btn ${isDone ? 'ghost' : ''} board" data-key="${r.key}" data-on="${isDone ? 0 : 1}">${isDone ? '취소' : '탑승 완료'}</button>
+    <button class="btn ${isDone ? 'ghost' : ''} board" data-key="${r.key}" data-on="${isDone ? 0 : 1}" data-name="${esc(r.m.name)}">${isDone ? '취소' : '탑승 완료'}</button>
   </div>`;
   $('busWait').innerHTML = wait.map(r => row(r, false)).join('') || '<div class="hint" style="padding:10px">없음</div>';
+  showUndo();
   $('busDone').innerHTML = done.map(r => row(r, true)).join('') || '<div class="hint" style="padding:10px">없음</div>';
 }
 function renderBusLegacy() { // CFG.YOUTH_MODE=false 일 때: 예전 단일 목록(체크박스)
@@ -486,13 +488,29 @@ function renderBusLegacy() { // CFG.YOUTH_MODE=false 일 때: 예전 단일 목�
     <span class="r-sub">${esc(r.s.name)}${r.s.name !== r.m.name ? ' 신청' : ''}</span>
   </label>`).join('');
 }
-$('legTabs').addEventListener('click', e => { const b = e.target.closest('button[data-leg]'); if (!b) return; LEG = b.dataset.leg; renderBus(); });
+$('legTabs').addEventListener('click', e => { const b = e.target.closest('button[data-leg]'); if (!b) return; LEG = b.dataset.leg; UNDO = null; renderBus(); });
+let UNDO = null; // 마지막 탑승 처리 { key, prev, name, val }
+function showUndo() {
+  if (!UNDO) { $('undoBar').hidden = true; return; }
+  $('undoMsg').textContent = `${UNDO.name}님 ${UNDO.val ? '탑승 처리' : '탑승 취소'} 완료`;
+  $('undoBar').hidden = false;
+}
+async function setCheck(key, val) {
+  const prev = !!CHECK[key]; CHECK[key] = val; renderBus();
+  try { await rpc('admin_set_checkin', { pw: PW, p_key: key, p_checked: val }); return true; }
+  catch (err) { CHECK[key] = prev; renderBus(); notify('저장 실패: ' + err.message); return false; }
+}
 $('busCols').addEventListener('click', async e => {
   const b = e.target.closest('button.board'); if (!b) return;
-  const key = b.dataset.key, val = b.dataset.on === '1'; CHECK[key] = val; renderBus();
-  try { await rpc('admin_set_checkin', { pw: PW, p_key: key, p_checked: val }); }
-  catch (err) { CHECK[key] = !val; renderBus(); notify('저장 실패: ' + err.message); }
+  const key = b.dataset.key, val = b.dataset.on === '1', name = b.dataset.name || '';
+  const prev = !!CHECK[key];
+  if (await setCheck(key, val)) { UNDO = { key, prev, name, val }; showUndo(); }
 });
+$('undoBtn').onclick = async () => {
+  if (!UNDO) return;
+  const u = UNDO; UNDO = null; showUndo();
+  await setCheck(u.key, u.prev);
+};
 $('busList').addEventListener('change', async e => {
   const cb = e.target.closest('input[type=checkbox]'); if (!cb) return;
   const key = cb.dataset.key, val = cb.checked; CHECK[key] = val; cb.closest('.rider').classList.toggle('on', val); renderBus();

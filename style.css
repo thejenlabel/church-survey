@@ -289,7 +289,7 @@ body{background:#f7f8fb}
 .seg.three button{padding:11px 2px;font-size:14px}
 
 /* 차량 탭: 구간 탭 + 미탑승/탑승 두 칸 */
-.tabs.legs{margin-bottom:12px}
+.tabs.legs{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:12px}
 .tabs.legs .tab{flex:1;padding:8px 6px;font-size:13px;line-height:1.2}
 .tabs.legs .tab small{display:block;font-size:11px;font-weight:400;opacity:.8}
 .bus-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -312,3 +312,7 @@ tr.youth-row td{background:#fffbeb}
 .scard-h .who{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .scard-h .who b{line-height:1.2}
 .badge.youth{flex:0 0 auto}
+
+.undo-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:8px 10px 8px 14px;margin:0 0 10px;font-size:14px;color:#2E3A8C}
+.undo-bar .btn.ghost{margin:0;padding:7px 14px;font-size:13px}
+@media (max-width:700px){.tabs.legs{grid-template-columns:1fr}.tabs.legs .tab{text-align:left;padding:8px 12px}.tabs.legs .tab small{display:inline;margin-left:6px}}
