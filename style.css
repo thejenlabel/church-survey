@@ -327,8 +327,8 @@ tr.youth-row td{background:#fffbeb}
 .c-meal .badge:not(.no){background:rgba(46,58,140,.08);border-color:#c3cbe8;color:#2E3A8C}
 .c-meal .badge.no, .badge.leg.none{background:#fff;border-color:#e3e7ef;color:#a8aebd}
 .c-bus{flex-direction:column;gap:3px}
-.badge.leg.go{background:rgba(46,58,140,.08);border-color:#c3cbe8;color:#2E3A8C}    /* 갈 때 */
-.badge.leg.back{background:rgba(15,123,79,.08);border-color:#bcd9c6;color:#0f7b4f}  /* 올 때 */
+.badge.leg.go{background:rgba(109,40,217,.08);border-color:#d3c4f0;color:#6d28d9}    /* 갈 때: 교회 > 현지 */
+.badge.leg.back{background:rgba(15,123,79,.08);border-color:#bcd9c6;color:#0f7b4f}  /* 올 때: 현지 > 교회 */
 
 /* 차량 배지 두 줄이 겹치지 않게 */
 .mem{align-items:center}
