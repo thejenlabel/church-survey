@@ -323,10 +323,10 @@ tr.youth-row td{background:#fffbeb}
 /* 차량 구간 표시: 갈 때 / 올 때 */
 /* 명단 배지 통일: 같은 크기·모양, 색으로만 구분 */
 /* 명단 배지: 크기·모양 통일, 투명 배경에 색으로 구분 */
-.c-meal .badge, .c-bus .badge{width:100%;text-align:center;margin:0;padding:3px 4px;font-size:10px;line-height:1.5;white-space:nowrap;border:1px solid transparent;border-radius:999px;font-weight:600}
+.c-meal .badge, .c-bus .badge{width:100%;text-align:center;margin:0;padding:1px 5px;font-size:10px;line-height:1.35;white-space:nowrap;border:1px solid transparent;border-radius:999px;font-weight:600}
 .c-meal .badge:not(.no){background:rgba(46,58,140,.08);border-color:#c3cbe8;color:#2E3A8C}
 .c-meal .badge.no, .badge.leg.none{background:#fff;border-color:#e3e7ef;color:#a8aebd}
-.c-bus{flex-direction:column;gap:3px}
+.c-bus{flex-direction:column;gap:2px}
 .badge.leg.go{background:rgba(109,40,217,.08);border-color:#d3c4f0;color:#6d28d9}    /* 갈 때: 교회 > 현지 */
 .badge.leg.back{background:rgba(15,123,79,.08);border-color:#bcd9c6;color:#0f7b4f}  /* 올 때: 현지 > 교회 */
 
