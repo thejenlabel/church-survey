@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=63">
+<link rel="stylesheet" href="style.css?v=64">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -298,11 +298,12 @@ function render() {
   const isSubmitter = m => !!SUBM.get(m); // 신청자 본인은 × 없음 — 소속 정보가 신청자에게 묶여 있어 신청서 전체 삭제로만
   // 차량 표시: 한 칸에 짧은 칩 하나 (왕복·끝 / 왕복·1시 / 갈때만 / 올때·끝 / 올때·1시)
   const busChip = m => {
-    const go = CFG.busGo(m), back = CFG.busBack(m);
-    if (!go && !back) return '<span class="badge no">차량X</span>';
-    if (go && back) return `<span class="badge bus ${back}">왕복·${back === 'early' ? '1시' : '끝'}</span>`;
-    if (go) return '<span class="badge bus go">갈때만</span>';
-    return `<span class="badge bus ${back}">올때·${back === 'early' ? '1시' : '끝'}</span>`;
+    const go = CFG.busGo(m), back = CFG.busBack(m);          // back: '' | 'early'(1시) | 'late'(끝나고)
+    const backTxt = back === 'early' ? '1시' : '끝나고';
+    if (!go && !back) return '<span class="badge no">안 탐</span>';
+    if (go && back) return `<span class="badge bus ${back}">가는차·${backTxt}</span>`;
+    if (go) return '<span class="badge bus go">가는차만</span>';
+    return `<span class="badge bus ${back}">${backTxt}만</span>`;
   };
   const memHtml = m => {
     const dpt = CFG.kidDept(m.birth_year);
