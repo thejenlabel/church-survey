@@ -132,7 +132,7 @@ label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
 .scard .mem .c-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:#1c1f24}
 .scard .mem .c-name small{color:#6b7280;font-size:12px}
 .scard .mem .c-dept,.scard .mem .c-meal,.scard .mem .c-bus{display:flex;justify-content:center}
-.scard .mem .badge{width:100%;text-align:center;margin:0;padding:3px 0;font-size:11px;line-height:1.4}
+.scard .mem .badge{width:100%;text-align:center;margin:0;padding:1px 5px;font-size:10px;line-height:1.35}
 .scard .mem .c-phone{text-align:right;font-size:13px;color:#374151;font-variant-numeric:tabular-nums;white-space:nowrap}
 @media (max-width:700px){
   .scard{padding:12px}
