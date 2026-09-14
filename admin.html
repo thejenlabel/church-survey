@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=55">
+<link rel="stylesheet" href="style.css?v=56">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -309,7 +309,7 @@ function render() {
 
   // 모바일 카드
   $('cards').innerHTML = list.map(s => `<div class="scard ${isYouth(s) ? 'youth-row' : ''}">
-    <div class="scard-h"><b>${esc(s.name)}</b>${youthTag(s)}<span class="scard-g">${esc(s.sub_group) || esc(s.group_type)}</span><span class="acts"><button class="btn edit" data-edit="${s.id}">수정</button><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></span></div>
+    <div class="scard-h"><span class="who"><b>${esc(s.name)}</b>${youthTag(s)}</span><span class="scard-g">${esc(s.sub_group) || esc(s.group_type)}</span><span class="acts"><button class="btn edit" data-edit="${s.id}">수정</button><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></span></div>
     <div class="scard-n">식사 ${s.members.filter(m => m.meal && CFG.countsFor(m)).length}명 · 교회 차량 ${s.members.filter(m => m.bus && CFG.countsFor(m)).length}명<span class="scard-t">${shortTime(s.created_at)}</span></div>
     ${s.members.map(memHtml).join('')}
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
