@@ -41,7 +41,7 @@ th{font-size:12px;color:#4A63A9;font-weight:600;background:#f0f3fa;position:stic
 .badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;background:#e9eef8;color:#2E3A8C;margin-right:4px}
 .badge.warn{background:#fef3c7;color:#92400e}
 .badge.no{background:#f3f4f6;color:#6b7280}
-.mem{display:grid;grid-template-columns:minmax(80px,1fr) 50px 44px 74px 92px 28px;align-items:center;gap:4px;font-size:13px;color:#374151;padding:2px 0}
+.mem{display:grid;grid-template-columns:minmax(80px,1fr) 50px 44px 62px 104px 28px;align-items:center;gap:4px;font-size:13px;color:#374151;padding:2px 0}
 .mem>span{min-width:0}
 .mem .c-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mem .c-name small{color:#6b7280}
@@ -130,7 +130,7 @@ label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
 .scard-h .btn.danger{height:28px;padding:0 10px;line-height:26px;font-size:12px}
 .scard-n{display:grid;grid-template-columns:1fr auto;align-items:center;height:28px;font-size:13px;color:#2E3A8C;font-weight:600;border-bottom:1px solid #eef0f3;margin-bottom:4px}
 .scard-t{font-size:12px;color:#9ca3af;font-weight:400;white-space:nowrap}
-.scard .mem{display:grid;grid-template-columns:minmax(0,1fr) 58px 48px 78px 104px 28px;column-gap:8px;align-items:center;min-height:32px;padding:3px 0;border:0;font-size:13px}
+.scard .mem{display:grid;grid-template-columns:minmax(0,1fr) 58px 48px 66px 116px 28px;column-gap:8px;align-items:center;min-height:32px;padding:3px 0;border:0;font-size:13px}
 .scard .mem .c-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:#1c1f24}
 .scard .mem .c-name small{color:#6b7280;font-size:12px}
 .scard .mem .c-dept,.scard .mem .c-meal,.scard .mem .c-bus{display:flex;justify-content:center}
@@ -139,7 +139,7 @@ label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
 @media (max-width:700px){
   .scard{padding:12px}
   .scard-h b{font-size:15px}.scard-g{font-size:12px}
-  .scard .mem{grid-template-columns:minmax(0,1fr) 48px 42px 70px 84px 28px;column-gap:5px;min-height:30px;padding:3px 0;font-size:12px}
+  .scard .mem{grid-template-columns:minmax(0,1fr) 48px 42px 60px 92px 28px;column-gap:5px;min-height:30px;padding:3px 0;font-size:12px}
   .scard .mem .c-name{font-size:13px}.scard .mem .c-phone{font-size:12px}
 }
 
@@ -318,14 +318,10 @@ tr.youth-row td{background:#fffbeb}
 @media (max-width:700px){.tabs.legs{grid-template-columns:1fr}.tabs.legs .tab{text-align:left;padding:8px 12px}.tabs.legs .tab small{display:inline;margin-left:6px}}
 
 /* 차량 구간 표시: 갈 때 / 올 때 */
-.bus2{display:flex;flex-direction:column;gap:2px;align-items:stretch;width:100%}
-.bus2 .badge{width:100%;text-align:center;margin:0;padding:2px 0;font-size:10px;line-height:1.4}
-.badge.go{background:#2E3A8C;color:#fff}
-.badge.back{background:#0f7b4f;color:#fff}
+.badge.bus{width:100%;text-align:center;margin:0;padding:2px 0;font-size:10px;line-height:1.5;white-space:nowrap}
+.badge.bus.round{background:#2E3A8C;color:#fff}
+.badge.bus.one{background:#e6efe9;color:#0f7b4f;border:1px solid #bcd9c6}
 
 /* 차량 배지 두 줄이 겹치지 않게 */
 .mem{align-items:center}
 .mem .c-bus{display:flex;align-items:center;justify-content:center}
-.c-bus .badge.go{background:#2E3A8C;color:#fff}
-.c-bus .badge.back{background:#0f7b4f;color:#fff}
-.bus2 .badge{white-space:nowrap}

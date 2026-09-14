@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=60">
+<link rel="stylesheet" href="style.css?v=61">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -292,9 +292,18 @@ function render() {
   const sidOf = m => SID.get(m) || '';
   const SUBM = new Map(); for (const s of DATA) for (const m of s.members) SUBM.set(m, keyOf(m.name) === keyOf(s.name));
   const isSubmitter = m => !!SUBM.get(m); // 신청자 본인은 × 없음 — 소속 정보가 신청자에게 묶여 있어 신청서 전체 삭제로만
+  // 차량 표시: 한 칸에 짧은 칩 하나 (왕복·끝 / 왕복·1시 / 갈때만 / 올때·끝 / 올때·1시)
+  const busChip = m => {
+    const go = CFG.busGo(m), back = CFG.busBack(m);
+    if (!go && !back) return '<span class="badge no">차량X</span>';
+    const backTxt = back === 'early' ? '1시' : '끝';
+    if (go && back) return `<span class="badge bus round">왕복·${backTxt}</span>`;
+    if (go) return '<span class="badge bus one">갈때만</span>';
+    return `<span class="badge bus one">올때·${backTxt}</span>`;
+  };
   const memHtml = m => {
     const dpt = CFG.kidDept(m.birth_year);
-    return `<span class="mem"><span class="c-name">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' <small>(' + esc(m.birth_year) + ')</small>' : ''}</span><span class="c-dept">${dpt ? '<span class="badge kidb">' + dpt + '</span>' : ''}</span><span class="c-meal"><span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span></span><span class="c-bus">${CFG.YOUTH_MODE ? (CFG.busAny(m) ? `<span class="bus2">${CFG.busGo(m) ? '<span class="badge go">갈 때</span>' : ''}${CFG.busBack(m) ? `<span class="badge back">올 때 ${({ early: '1시', late: '끝나고' })[CFG.busBack(m)]}</span>` : ''}</span>` : '<span class="badge no">차량X</span>') : `<span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>`}</span><span class="c-phone">${m.phone ? esc(m.phone) : ''}</span><button class="rm-m${isSubmitter(m) ? ' owner' : ''}" data-sid="${sidOf(m)}" data-mname="${esc(m.name)}" aria-label="이 사람 삭제">×</button></span>`;
+    return `<span class="mem"><span class="c-name">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' <small>(' + esc(m.birth_year) + ')</small>' : ''}</span><span class="c-dept">${dpt ? '<span class="badge kidb">' + dpt + '</span>' : ''}</span><span class="c-meal"><span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span></span><span class="c-bus">${CFG.YOUTH_MODE ? busChip(m) : `<span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>`}</span><span class="c-phone">${m.phone ? esc(m.phone) : ''}</span><button class="rm-m${isSubmitter(m) ? ' owner' : ''}" data-sid="${sidOf(m)}" data-mname="${esc(m.name)}" aria-label="이 사람 삭제">×</button></span>`;
   };
   $('rows').innerHTML = list.map(s => `<tr class="${isYouth(s) ? 'youth-row' : ''}">
     <td><b>${esc(s.name)}</b>${youthTag(s)}</td>
