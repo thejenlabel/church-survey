@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>온가족예배 참석자 사전조사</title>
+<title>온가족예배 중고등부 참석 조사</title>
 <link rel="stylesheet" href="style.css?v=53">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
@@ -13,7 +13,7 @@
   <button class="back" id="backTop" hidden>← 뒤로</button>
   <img src="logo.png" alt="이음교회" class="logo">
   <h1 id="title"></h1>
-  <div class="steps" id="steps"><span class="st on">1 본인</span><span class="st">2 소속</span><span class="st">3 참석 인원</span></div>
+  <div class="steps" id="steps"><span class="st on">1 본인</span><span class="st">2 소속</span><span class="st">3 참석 정보</span></div>
 
   <!-- 1단계: 이름·전화 -->
   <div class="card" id="step1">
@@ -39,7 +39,7 @@
 
   <!-- 3단계: 참석 인원 -->
   <div class="card" id="step2" hidden>
-    <p style="margin:0 0 14px;font-weight:700" id="step2Title">본인 포함, 함께 참석하는 가족을 모두 적어 주세요</p>
+    <p style="margin:0 0 14px;font-weight:700" id="step2Title">출생년도·식사·차량을 알려 주세요</p>
     <div id="members"></div>
     <button class="btn ghost" id="add">+ 인원 추가</button>
     <div class="err" id="err2"></div>
@@ -62,7 +62,7 @@
   </div>
 </div>
 
-<script>window.FORM_MODE = "all";</script>
+<script>window.FORM_MODE = "youth";</script>
 <script src="config.js?v=27"></script>
 <script src="form.js?v=1"></script>
 </body>

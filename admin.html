@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=51">
+<link rel="stylesheet" href="style.css?v=53">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -42,7 +42,12 @@
     </section>
 
     <div class="card sec sec-list" id="busView" hidden>
-      <div class="bus-head"><b>차량 탑승자</b> <span class="hint" id="busSummary"></span></div>
+      <div class="tabs legs" id="legTabs" hidden></div>
+      <div class="bus-head"><b id="busTitle">차량 탑승자</b> <span class="hint" id="busSummary"></span></div>
+      <div class="bus-cols" id="busCols" hidden>
+        <div class="bus-col"><div class="bus-col-h">미탑승 <span id="cntWait"></span></div><div id="busWait"></div></div>
+        <div class="bus-col on"><div class="bus-col-h">탑승 <span id="cntDone"></span></div><div id="busDone"></div></div>
+      </div>
       <div id="busList"></div>
     </div>
     <div id="listView" class="sec sec-list">
@@ -102,7 +107,7 @@
   </div>
 </div>
 
-<script src="config.js?v=26"></script>
+<script src="config.js?v=27"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 자체 안내창(브라우저 confirm/alert 대체 — 일부 앱 내 브라우저가 기본 창을 막음)
@@ -286,7 +291,7 @@ function render() {
   const isSubmitter = m => !!SUBM.get(m); // 신청자 본인은 × 없음 — 소속 정보가 신청자에게 묶여 있어 신청서 전체 삭제로만
   const memHtml = m => {
     const dpt = CFG.kidDept(m.birth_year);
-    return `<span class="mem"><span class="c-name">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' <small>(' + esc(m.birth_year) + ')</small>' : ''}</span><span class="c-dept">${dpt ? '<span class="badge kidb">' + dpt + '</span>' : ''}</span><span class="c-meal"><span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span></span><span class="c-bus"><span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span></span><span class="c-phone">${m.phone ? esc(m.phone) : ''}</span><button class="rm-m${isSubmitter(m) ? ' owner' : ''}" data-sid="${sidOf(m)}" data-mname="${esc(m.name)}" aria-label="이 사람 삭제">×</button></span>`;
+    return `<span class="mem"><span class="c-name">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' <small>(' + esc(m.birth_year) + ')</small>' : ''}</span><span class="c-dept">${dpt ? '<span class="badge kidb">' + dpt + '</span>' : ''}</span><span class="c-meal"><span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span></span><span class="c-bus">${CFG.YOUTH_MODE ? (CFG.busAny(m) ? `<span class="badge" title="가는 ${CFG.busGo(m) ? 'O' : 'X'} · 오는 ${({ '': 'X', early: '1시', late: '끝나고' })[CFG.busBack(m)]}">차량${CFG.busGo(m) ? '↑' : ''}${CFG.busBack(m) ? ({ early: '↓1시', late: '↓끝' })[CFG.busBack(m)] : ''}</span>` : '<span class="badge no">차량X</span>') : `<span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>`}</span><span class="c-phone">${m.phone ? esc(m.phone) : ''}</span><button class="rm-m${isSubmitter(m) ? ' owner' : ''}" data-sid="${sidOf(m)}" data-mname="${esc(m.name)}" aria-label="이 사람 삭제">×</button></span>`;
   };
   $('rows').innerHTML = list.map(s => `<tr>
     <td><b>${esc(s.name)}</b></td>
@@ -442,8 +447,33 @@ document.addEventListener('click', async e => {
 // 차량 탑승자: 이름순 목록 + 탑승 확인 체크(모든 기기에서 공유 저장)
 let CHECK = {};
 async function loadCheckins() { try { const rows = await rpc('admin_checkins', { pw: PW }); CHECK = {}; for (const r of rows) CHECK[r.key] = r.checked; } catch (e) { console.error(e); } }
+let LEG = 'go';
+function riderKey(s, m, leg) { return s.id + '|' + keyOf(m.name) + (leg ? '|' + leg : ''); }
 function renderBus() {
-  const riders = DATA.flatMap(s => s.members.filter(m => m.bus && CFG.countsFor(m)).map(m => ({ key: s.id + '|' + keyOf(m.name), m, s })))
+  if (!CFG.YOUTH_MODE) return renderBusLegacy();
+  // 구간 탭
+  $('legTabs').hidden = false; $('busCols').hidden = false; $('busList').hidden = true;
+  const counts = {}; for (const L of CFG.LEGS) counts[L.key] = DATA.flatMap(s => s.members).filter(m => CFG.countsFor(m) && CFG.onLeg(m, L.key)).length;
+  $('legTabs').innerHTML = CFG.LEGS.map(L => `<button class="tab ${LEG === L.key ? 'on' : ''}" data-leg="${L.key}">${L.label}<small>${counts[L.key]}명</small></button>`).join('');
+  const Lcur = CFG.LEGS.find(L => L.key === LEG);
+  const riders = DATA.flatMap(s => s.members.filter(m => CFG.countsFor(m) && CFG.onLeg(m, LEG)).map(m => ({ key: riderKey(s, m, LEG), m, s })))
+    .sort((a, b) => a.m.name.localeCompare(b.m.name, 'ko'));
+  const wait = riders.filter(r => !CHECK[r.key]), done = riders.filter(r => CHECK[r.key]);
+  $('busTitle').textContent = Lcur.label;
+  $('busSummary').textContent = riders.length ? `신청 ${riders.length}명 · 탑승 ${done.length}명 · 미탑승 ${wait.length}명` : '이 구간 신청자가 없습니다';
+  $('cntWait').textContent = wait.length; $('cntDone').textContent = done.length;
+  const row = (r, isDone) => `<div class="rider ${isDone ? 'on' : ''}">
+    <span class="r-name">${esc(r.m.name)}${r.m.birth_year ? ' <small>(' + esc(r.m.birth_year) + ')</small>' : ''}${CFG.busLegacy(r.m) && LEG !== 'go' ? ' <span class="badge no">왕복 신청</span>' : ''}</span>
+    <span class="r-phone">${esc(r.m.phone || '')}</span>
+    <span class="r-sub">${esc(r.s.name)}${r.s.name !== r.m.name ? ' 신청' : ''} · ${esc(r.s.sub_group || r.s.group_type)}</span>
+    <button class="btn ${isDone ? 'ghost' : ''} board" data-key="${r.key}" data-on="${isDone ? 0 : 1}">${isDone ? '취소' : '탑승 완료'}</button>
+  </div>`;
+  $('busWait').innerHTML = wait.map(r => row(r, false)).join('') || '<div class="hint" style="padding:10px">없음</div>';
+  $('busDone').innerHTML = done.map(r => row(r, true)).join('') || '<div class="hint" style="padding:10px">없음</div>';
+}
+function renderBusLegacy() { // CFG.YOUTH_MODE=false 일 때: 예전 단일 목록(체크박스)
+  $('legTabs').hidden = true; $('busCols').hidden = true; $('busList').hidden = false; $('busTitle').textContent = '차량 탑승자';
+  const riders = DATA.flatMap(s => s.members.filter(m => m.bus && CFG.countsFor(m)).map(m => ({ key: riderKey(s, m), m, s })))
     .sort((a, b) => a.m.name.localeCompare(b.m.name, 'ko'));
   const done = riders.filter(r => CHECK[r.key]).length;
   $('busSummary').textContent = riders.length ? `${riders.length}명 · 탑승 확인 ${done}명 · 미확인 ${riders.length - done}명` : '교회 차량 신청자가 없습니다';
@@ -454,6 +484,13 @@ function renderBus() {
     <span class="r-sub">${esc(r.s.name)}${r.s.name !== r.m.name ? ' 신청' : ''}</span>
   </label>`).join('');
 }
+$('legTabs').addEventListener('click', e => { const b = e.target.closest('button[data-leg]'); if (!b) return; LEG = b.dataset.leg; renderBus(); });
+$('busCols').addEventListener('click', async e => {
+  const b = e.target.closest('button.board'); if (!b) return;
+  const key = b.dataset.key, val = b.dataset.on === '1'; CHECK[key] = val; renderBus();
+  try { await rpc('admin_set_checkin', { pw: PW, p_key: key, p_checked: val }); }
+  catch (err) { CHECK[key] = !val; renderBus(); notify('저장 실패: ' + err.message); }
+});
 $('busList').addEventListener('change', async e => {
   const cb = e.target.closest('input[type=checkbox]'); if (!cb) return;
   const key = cb.dataset.key, val = cb.checked; CHECK[key] = val; cb.closest('.rider').classList.toggle('on', val); renderBus();
@@ -545,13 +582,15 @@ $('excel').onclick = async () => {
   ], people.map((p, i) => ({ no: i + 1, name: p.m.name, birth: p.m.birth_year || '', dept: CFG.kidDept(p.m.birth_year), phone: p.m.phone || '', meal: OX(p.m.meal), bus: OX(p.m.bus), cnt: CFG.countsFor(p.m) ? '포함' : '제외', group: p.s.group_type, sub: p.s.sub_group || '', by: p.s.name, kind: p.self ? '본인' : '동반' })));
 
   // ④ 차량 탑승자
-  const riders = people.filter(p => p.m.bus && CFG.countsFor(p.m)).sort((a, b) => a.m.name.localeCompare(b.m.name, 'ko'));
+  const riders = people.filter(p => CFG.busAny(p.m) && CFG.countsFor(p.m)).sort((a, b) => a.m.name.localeCompare(b.m.name, 'ko'));
   sheet('차량탑승자', '교회 차량 탑승자 명단', [
-    { h: '번호', k: 'no', w: 6, align: 'center' }, { h: '이름', k: 'name', w: 12 }, { h: '생년', k: 'birth', w: 8, align: 'center' }, { h: '전화번호', k: 'phone', w: 15, align: 'center' }, { h: '신청자', k: 'by', w: 12 }, { h: '탑승 확인', k: 'ride', w: 10, align: 'center' }
-  ], riders.map((p, i) => ({ no: i + 1, name: p.m.name, birth: p.m.birth_year || '', phone: p.m.phone || '', by: p.s.name, ride: OX(CHECK[p.s.id + '|' + keyOf(p.m.name)]) })));
+    { h: '번호', k: 'no', w: 6, align: 'center' }, { h: '이름', k: 'name', w: 12 }, { h: '생년', k: 'birth', w: 8, align: 'center' }, { h: '전화번호', k: 'phone', w: 15, align: 'center' }, { h: '소속', k: 'sub', w: 22 }, { h: '신청자', k: 'by', w: 12 },
+    { h: '교회→현지', k: 'go', w: 10, align: 'center' }, { h: '현지(1시)→교회', k: 'early', w: 13, align: 'center' }, { h: '현지(끝나고)→교회', k: 'late', w: 15, align: 'center' },
+    { h: '탑승 확인(가는)', k: 'cgo', w: 13, align: 'center' }, { h: '탑승 확인(1시)', k: 'cearly', w: 13, align: 'center' }, { h: '탑승 확인(끝나고)', k: 'clate', w: 15, align: 'center' }
+  ], riders.map((p, i) => ({ no: i + 1, name: p.m.name, birth: p.m.birth_year || '', phone: p.m.phone || '', sub: p.s.sub_group || p.s.group_type, by: p.s.name,
+    go: OX(CFG.busGo(p.m)), early: OX(CFG.busBack(p.m) === 'early'), late: OX(CFG.busBack(p.m) === 'late'),
+    cgo: CFG.busGo(p.m) ? OX(CHECK[riderKey(p.s, p.m, 'go')]) : '', cearly: CFG.busBack(p.m) === 'early' ? OX(CHECK[riderKey(p.s, p.m, 'early')]) : '', clate: CFG.busBack(p.m) === 'late' ? OX(CHECK[riderKey(p.s, p.m, 'late')]) : '' })));
 
-  // 남는 빈 열 제거(일부 뷰어에서 빈 테두리 열로 보임)
-  for (const ws of wb.worksheets) { const used = ws.actualColumnCount; if (ws.columnCount > used) ws.spliceColumns(used + 1, ws.columnCount - used); }
   const buf = await wb.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
   const link = document.createElement('a'); link.href = url; link.download = `온가족예배_참석조사_${new Date().toISOString().slice(0, 10)}.xlsx`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);

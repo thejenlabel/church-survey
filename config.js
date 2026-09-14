@@ -3,6 +3,7 @@ window.CFG = {
   SUPABASE_URL: "https://sdpyjgjoowxxrtngwyee.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcHlqZ2pvb3d4eHJ0bmd3eWVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MTA0NzQsImV4cCI6MjEwNDM4NjQ3NH0.lnh1Ag1OgjwDqm93HQ2dUVG2eRKr7WL2tEGvGFEyuN8",
   TITLE: "판교이음교회 온가족예배 참석자 사전 조사",
+  TITLE_YOUTH: "판교이음교회 온가족예배 중고등부 참석 조사",
   // 소속(탑다운) → 세부소속(탑다운). 목록이 비면 세부소속 없음. {label, items}는 구분 제목.
   // 소속(탑다운) → 세부소속(탑다운). 목록이 비면 세부소속 없음.
   GROUPS: {
@@ -101,3 +102,20 @@ CFG.MEAL_FEE = { older: 14000, young: 12000 }; // 초등생 이상 14,000원 · 
 
 // 식사 인원 분리 기준: 유치부·영유아부(초등 미만) = young
 CFG.isYoung = function (birth_year) { return CFG.kidDept(birth_year) === '유치부'; }; // 영유아부(24년생~)는 식사 미집계
+
+// ---- 차량 구간(2026-09-14, 중고등부 폼 추가와 함께) ----
+// 기존 폼은 왕복 여부(bus)만 받았음 → bus=1 은 가는 차량 탑승 + 끝나고 출발 차량으로 본다
+CFG.YOUTH_MODE = true; // false 로 바꾸면 관리자 차량 탭이 예전(단일 목록) UI 로 돌아간다. 데이터는 그대로.
+CFG.BUS_GO = [["1", "탑승"], ["0", "안 탑승"]];
+CFG.BUS_BACK = [["", "안 탑승"], ["early", "1시 출발"], ["late", "끝나고 출발"]];
+CFG.LEGS = [
+  { key: "go", label: "교회 → 현지", short: "가는 차량" },
+  { key: "early", label: "현지(1시) → 교회", short: "오는 차량 · 1시" },
+  { key: "late", label: "현지(끝나고) → 교회", short: "오는 차량 · 끝나고" }
+];
+CFG.busGo = m => (m.bus_go === undefined || m.bus_go === null) ? (m.bus ? 1 : 0) : (+m.bus_go ? 1 : 0);
+CFG.busBack = m => (m.bus_back === undefined || m.bus_back === null) ? (m.bus ? "late" : "") : String(m.bus_back || "");
+CFG.busLegacy = m => m.bus_go === undefined || m.bus_go === null; // 왕복으로만 신청한 옛 데이터
+CFG.onLeg = (m, leg) => leg === "go" ? !!CFG.busGo(m) : CFG.busBack(m) === leg;
+CFG.busAny = m => !!CFG.busGo(m) || !!CFG.busBack(m);
+CFG.YOUTH_GROUPS = ["고등부(엘피스)", "중등부(아가페)"]; // 중고등부 폼의 소속 선택지

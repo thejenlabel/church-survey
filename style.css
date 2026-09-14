@@ -285,3 +285,21 @@ body{background:#f7f8fb}
 
 .ed-nav{display:flex;gap:8px;margin-top:14px}.ed-nav .btn{margin:0;flex:1}.ed-nav .btn.ghost{flex:0 0 auto;padding:12px 16px}
 #edSteps{margin:4px 0 14px}
+.seg.three{grid-template-columns:1fr 1fr 1fr}
+.seg.three button{padding:11px 2px;font-size:14px}
+
+/* 차량 탭: 구간 탭 + 미탑승/탑승 두 칸 */
+.tabs.legs{margin-bottom:12px}
+.tabs.legs .tab{flex:1;padding:8px 6px;font-size:13px;line-height:1.2}
+.tabs.legs .tab small{display:block;font-size:11px;font-weight:400;opacity:.8}
+.bus-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bus-col{border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.bus-col.on{border-color:#bfe3c9}
+.bus-col-h{padding:8px 12px;font-weight:700;font-size:13px;background:#f3f4f6;color:#374151}
+.bus-col.on .bus-col-h{background:#eef7ee;color:#166534}
+.bus-col-h span{font-weight:800;margin-left:4px}
+.bus-col .rider{grid-template-columns:1fr auto;grid-template-areas:"name btn" "phone btn" "sub btn";gap:1px 10px;padding:8px 10px;cursor:default}
+.bus-col .rider .r-name{grid-area:name;font-size:15px}.bus-col .rider .r-phone{grid-area:phone;font-size:12px}.bus-col .rider .r-sub{grid-area:sub}
+.bus-col .rider .btn.board{grid-area:btn;width:auto;margin:0;padding:8px 12px;font-size:13px;white-space:nowrap}
+.bus-col.on .rider{background:transparent}
+@media (max-width:700px){.bus-cols{grid-template-columns:1fr}.tabs.legs .tab{font-size:12px;padding:7px 2px}}
