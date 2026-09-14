@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=61">
+<link rel="stylesheet" href="style.css?v=62">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -300,10 +300,9 @@ function render() {
   const busChip = m => {
     const go = CFG.busGo(m), back = CFG.busBack(m);
     if (!go && !back) return '<span class="badge no">차량X</span>';
-    const backTxt = back === 'early' ? '1시' : '끝';
-    if (go && back) return `<span class="badge bus round">왕복·${backTxt}</span>`;
-    if (go) return '<span class="badge bus one">갈때만</span>';
-    return `<span class="badge bus one">올때·${backTxt}</span>`;
+    if (go && back) return `<span class="badge bus ${back}">왕복·${back === 'early' ? '1시' : '끝'}</span>`;
+    if (go) return '<span class="badge bus go">갈때만</span>';
+    return `<span class="badge bus ${back}">올때·${back === 'early' ? '1시' : '끝'}</span>`;
   };
   const memHtml = m => {
     const dpt = CFG.kidDept(m.birth_year);

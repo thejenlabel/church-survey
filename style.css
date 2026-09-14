@@ -116,9 +116,7 @@ label em{font-style:normal;color:#dc2626;font-size:11px;margin-left:4px}
 @media (max-width:600px){.row-gap{display:none}}
 
 /* O/X 대비 강화: O는 채운 색, X는 흐린 외곽선 */
-.c-meal .badge:not(.no){background:#2E3A8C;color:#fff}
-.c-bus .badge:not(.no){background:#0f7b4f;color:#fff}
-.badge.no{background:#fff;border:1px solid #d1d5db;color:#9ca3af}
+.badge.no{background:#fff;border:1px solid #d9dee9;color:#9ca3af}
 .btn.danger{white-space:nowrap}
 
 /* ===== 신청 카드 격자 (카드 모드 공통) =====
@@ -318,9 +316,13 @@ tr.youth-row td{background:#fffbeb}
 @media (max-width:700px){.tabs.legs{grid-template-columns:1fr}.tabs.legs .tab{text-align:left;padding:8px 12px}.tabs.legs .tab small{display:inline;margin-left:6px}}
 
 /* 차량 구간 표시: 갈 때 / 올 때 */
-.badge.bus{width:100%;text-align:center;margin:0;padding:2px 0;font-size:10px;line-height:1.5;white-space:nowrap}
-.badge.bus.round{background:#2E3A8C;color:#fff}
-.badge.bus.one{background:#e6efe9;color:#0f7b4f;border:1px solid #bcd9c6}
+/* 명단 배지 통일: 같은 크기·모양, 색으로만 구분 */
+.c-meal .badge, .c-bus .badge, .c-dept .badge{width:100%;text-align:center;margin:0;padding:3px 0;font-size:10px;line-height:1.5;white-space:nowrap;border:1px solid transparent;font-weight:600}
+.c-meal .badge:not(.no){background:#2E3A8C;color:#fff}
+.badge.bus.early{background:#b45309;color:#fff}   /* 1시 출발 */
+.badge.bus.late{background:#0f7b4f;color:#fff}    /* 끝나고 출발 */
+.badge.bus.go{background:#4A63A9;color:#fff}      /* 갈 때만 */
+.c-meal .badge.no, .c-bus .badge.no{background:#fff;border-color:#d9dee9;color:#9ca3af}
 
 /* 차량 배지 두 줄이 겹치지 않게 */
 .mem{align-items:center}
