@@ -106,8 +106,8 @@ CFG.isYoung = function (birth_year) { return CFG.kidDept(birth_year) === '유치
 // ---- 차량 구간(2026-09-14, 중고등부 폼 추가와 함께) ----
 // 기존 폼은 왕복 여부(bus)만 받았음 → bus=1 은 가는 차량 탑승 + 끝나고 출발 차량으로 본다
 CFG.YOUTH_MODE = true; // false 로 바꾸면 관리자 차량 탭이 예전(단일 목록) UI 로 돌아간다. 데이터는 그대로.
-CFG.BUS_GO = [["1", "탑승"], ["0", "안 탑승"]];
-CFG.BUS_BACK = [["", "안 탑승"], ["early", "1시 출발"], ["late", "끝나고 출발"]];
+CFG.BUS_GO = [["1", "탑승함"], ["0", "탑승안함"]];
+CFG.BUS_BACK = [["", "탑승안함"], ["early", "1시 출발"], ["late", "끝나고 출발"]];
 CFG.LEGS = [
   { key: "go", label: "교회 → 현지", short: "가는 차량" },
   { key: "early", label: "현지(1시) → 교회", short: "오는 차량 · 1시" },

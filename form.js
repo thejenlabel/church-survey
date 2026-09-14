@@ -108,17 +108,17 @@ function addMember(name = '', isSelf = false, data = null) {
     <div class="row">
       <div><label>출생년도 <em>필수</em></label><div class="year-wrap"><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><span>년</span></div><div class="dept hint"></div></div>
       <div class="row-gap"></div>
-      <div><label>식사</label>${seg('m-meal', CFG.MEAL)}</div>
-      ${YOUTH ? `<div><label>가는 차량 (교회 → 현지)</label>${seg('m-busgo', CFG.BUS_GO)}</div><div><label>오는 차량 (현지 → 교회)</label>${seg('m-busback', CFG.BUS_BACK, 3)}</div><input type="hidden" class="m-bus">` : `<div><label>교회 차량</label>${seg('m-bus', CFG.BUS)}</div>`}
+      <div><label>식사 <em>필수</em></label>${seg('m-meal', CFG.MEAL)}</div>
+      ${YOUTH ? `<div><label>가는 차량 (교회 → 현지) <em>필수</em></label>${seg('m-busgo', CFG.BUS_GO)}</div><div><label>오는 차량 (현지 → 교회) <em>필수</em></label>${seg('m-busback', CFG.BUS_BACK, 3)}</div><input type="hidden" class="m-bus">` : `<div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>`}
     </div>` : `
     <div class="member-h"><h4>${isSelf ? '본인' : '동반 가족'}</h4>${isSelf ? selfBtn : '<button type="button" class="rm" aria-label="삭제">삭제</button>'}</div>
     <div class="row">
-      <div><label>이름</label><input class="m-name" placeholder="이름" autocomplete="off"></div>
+      <div><label>이름 <em>필수</em></label><input class="m-name" placeholder="이름" autocomplete="off"></div>
       <div><label>출생년도 <em>필수</em></label><div class="year-wrap"><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><span>년</span></div><div class="dept hint"></div></div>
       <div><label>전화번호 <em>필수</em>${isSelf ? '' : ' <small class="hint" style="display:inline">(' + CFG.PHONE_OPTIONAL_FROM + '년 이후 출생은 생략 가능)</small>'}</label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="01012345678" autocomplete="off"></div>
       <div class="row-gap"></div>
-      <div><label>식사</label>${seg('m-meal', CFG.MEAL)}</div>
-      ${YOUTH ? `<div><label>가는 차량 (교회 → 현지)</label>${seg('m-busgo', CFG.BUS_GO)}</div><div><label>오는 차량 (현지 → 교회)</label>${seg('m-busback', CFG.BUS_BACK, 3)}</div><input type="hidden" class="m-bus">` : `<div><label>교회 차량</label>${seg('m-bus', CFG.BUS)}</div>`}
+      <div><label>식사 <em>필수</em></label>${seg('m-meal', CFG.MEAL)}</div>
+      ${YOUTH ? `<div><label>가는 차량 (교회 → 현지) <em>필수</em></label>${seg('m-busgo', CFG.BUS_GO)}</div><div><label>오는 차량 (현지 → 교회) <em>필수</em></label>${seg('m-busback', CFG.BUS_BACK, 3)}</div><input type="hidden" class="m-bus">` : `<div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>`}
     </div>`;
   d.querySelector('.m-name').value = name;
   d.querySelectorAll('.seg').forEach(g => g.addEventListener('click', e => {

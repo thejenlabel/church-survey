@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=54">
+<link rel="stylesheet" href="style.css?v=55">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -76,16 +76,16 @@
     <div class="steps" id="edSteps"><span class="st on">1 본인</span><span class="st">2 소속</span><span class="st">3 참석 인원</span></div>
 
     <div id="edP1">
-      <label>이름</label><input id="edName" autocomplete="off">
-      <label>전화번호</label><input id="edPhone" class="m-phone" inputmode="numeric" maxlength="13" autocomplete="off">
+      <label>이름 <em>필수</em></label><input id="edName" autocomplete="off">
+      <label>전화번호 <em>필수</em></label><input id="edPhone" class="m-phone" inputmode="numeric" maxlength="13" autocomplete="off">
       <div class="err" id="edErr1"></div>
       <button type="button" class="btn" id="edNext1">다음</button>
     </div>
 
     <div id="edP2" hidden>
-      <label>소속</label>
+      <label>소속 <em>필수</em></label>
       <select id="edGroup"><option value="">선택하세요</option></select>
-      <div id="edSubWrap" hidden><label>세부소속</label><select id="edSub"></select></div>
+      <div id="edSubWrap" hidden><label>세부소속 <em>필수</em></label><select id="edSub"></select></div>
       <div class="err" id="edErr2"></div>
       <div class="ed-nav"><button type="button" class="btn ghost" id="edPrev2">이전</button><button type="button" class="btn" id="edNext2">다음</button></div>
     </div>
@@ -107,7 +107,7 @@
   </div>
 </div>
 
-<script src="config.js?v=27"></script>
+<script src="config.js?v=28"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 자체 안내창(브라우저 confirm/alert 대체 — 일부 앱 내 브라우저가 기본 창을 막음)
@@ -343,17 +343,17 @@ function edAddMember(m = null, isSelf = false) {
     <div class="row">
       <div><label>출생년도 <em>필수</em></label><div class="year-wrap"><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><span>년</span></div><div class="dept hint"></div></div>
       <div class="row-gap"></div>
-      <div><label>식사</label>${seg('m-meal', CFG.MEAL)}</div>
-      <div><label>교회 차량</label>${seg('m-bus', CFG.BUS)}</div>
+      <div><label>식사 <em>필수</em></label>${seg('m-meal', CFG.MEAL)}</div>
+      <div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>
     </div>` : `
     <div class="member-h"><h4>동반 가족</h4><button type="button" class="rm">삭제</button></div>
     <div class="row">
-      <div><label>이름</label><input class="m-name" placeholder="이름" autocomplete="off"></div>
+      <div><label>이름 <em>필수</em></label><input class="m-name" placeholder="이름" autocomplete="off"></div>
       <div><label>출생년도 <em>필수</em></label><div class="year-wrap"><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><span>년</span></div><div class="dept hint"></div></div>
       <div><label>전화번호 <em>필수</em> <small class="hint" style="display:inline">(${CFG.PHONE_OPTIONAL_FROM}년 이후 출생은 생략 가능)</small></label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="01012345678" autocomplete="off"></div>
       <div class="row-gap"></div>
-      <div><label>식사</label>${seg('m-meal', CFG.MEAL)}</div>
-      <div><label>교회 차량</label>${seg('m-bus', CFG.BUS)}</div>
+      <div><label>식사 <em>필수</em></label>${seg('m-meal', CFG.MEAL)}</div>
+      <div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>
     </div>`;
   d.querySelectorAll('.seg').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); g.previousElementSibling.value = b.dataset.v; }));
   if (m) {
