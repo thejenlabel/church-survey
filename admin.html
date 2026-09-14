@@ -189,9 +189,13 @@ async function dedupe(auto) {
   const sorted = [...DATA].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   const plan = []; // {id, members}
   const keep = {};
+  const isY = s => CFG.YOUTH_GROUPS.includes(s.group_type);
   for (const k of dups) {
-    const own = sorted.find(s => s.members.some(m => idOf(m) === k && keyOf(m.name) === keyOf(s.name)));
-    keep[k] = own ? own.id : sorted.find(s => s.members.some(m => idOf(m) === k)).id;
+    const has = s => s.members.some(m => idOf(m) === k);
+    const isSelfIn = s => s.members.some(m => idOf(m) === k && keyOf(m.name) === keyOf(s.name));
+    // 우선순위: ① 중고등부 폼에서 본인이 낸 것 ② 중고등부 신청 ③ 본인이 낸 것 ④ 가장 먼저 낸 것
+    const pick = sorted.find(s => isY(s) && isSelfIn(s)) || sorted.find(s => isY(s) && has(s)) || sorted.find(isSelfIn) || sorted.find(has);
+    keep[k] = pick.id;
   }
   for (const s of sorted) {
     const seenHere = new Set();

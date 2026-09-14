@@ -80,6 +80,8 @@ async function startEdit(sid, phone) {
   own.members.forEach((m, i) => addMember(m.name, i === 0, m));
   $('step2Title').textContent = '신청 내용 수정 — 인원 정보를 고치거나 삭제하세요';
   $('submit').textContent = '수정 완료';
+  // 중고등부 폼인데 기존 소속이 중고등부가 아니면(부모가 일반 폼으로 넣어 둔 경우 등) 소속부터 다시 고른다
+  if (YOUTH && !CFG.YOUTH_GROUPS.includes(own.group_type)) { $('group').value = ''; $('sub').innerHTML = ''; $('subWrap').hidden = true; show('stepG'); setStep(2); return; }
   show('step2'); setStep(3);
 }
 
