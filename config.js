@@ -109,9 +109,9 @@ CFG.YOUTH_MODE = true; // false 로 바꾸면 관리자 차량 탭이 예전(단
 CFG.BUS_GO = [["1", "탑승함"], ["0", "탑승안함"]];
 CFG.BUS_BACK = [["", "탑승안함"], ["early", "1시 출발"], ["late", "끝나고 출발"]];
 CFG.LEGS = [
-  { key: "go", label: "교회 → 현지", short: "가는 차량" },
-  { key: "early", label: "현지(1시) → 교회", short: "오는 차량 · 1시" },
-  { key: "late", label: "현지(끝나고) → 교회", short: "오는 차량 · 끝나고" }
+  { key: "go", label: "교회 > 현지", short: "교회 > 현지" },
+  { key: "early", label: "현지 > 교회 (1시)", short: "현지 > 교회 (1시)" },
+  { key: "late", label: "현지 > 교회 (끝나고)", short: "현지 > 교회 (끝나고)" }
 ];
 CFG.busGo = m => (m.bus_go === undefined || m.bus_go === null) ? (m.bus ? 1 : 0) : (+m.bus_go ? 1 : 0);
 CFG.busBack = m => (m.bus_back === undefined || m.bus_back === null) ? (m.bus ? "late" : "") : String(m.bus_back || "");

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=64">
+<link rel="stylesheet" href="style.css?v=65">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -108,7 +108,7 @@
   </div>
 </div>
 
-<script src="config.js?v=28"></script>
+<script src="config.js?v=29"></script>
 <script>
 const $ = id => document.getElementById(id);
 // 자체 안내창(브라우저 confirm/alert 대체 — 일부 앱 내 브라우저가 기본 창을 막음)
@@ -297,13 +297,14 @@ function render() {
   const SUBM = new Map(); for (const s of DATA) for (const m of s.members) SUBM.set(m, keyOf(m.name) === keyOf(s.name));
   const isSubmitter = m => !!SUBM.get(m); // 신청자 본인은 × 없음 — 소속 정보가 신청자에게 묶여 있어 신청서 전체 삭제로만
   // 차량 표시: 한 칸에 짧은 칩 하나 (왕복·끝 / 왕복·1시 / 갈때만 / 올때·끝 / 올때·1시)
+  // 구간별 칩: 갈 때(교회>현지) 남색 · 올 때(현지>교회) 초록, 투명 배경
   const busChip = m => {
-    const go = CFG.busGo(m), back = CFG.busBack(m);          // back: '' | 'early'(1시) | 'late'(끝나고)
-    const backTxt = back === 'early' ? '1시' : '끝나고';
-    if (!go && !back) return '<span class="badge no">안 탐</span>';
-    if (go && back) return `<span class="badge bus ${back}">가는차·${backTxt}</span>`;
-    if (go) return '<span class="badge bus go">가는차만</span>';
-    return `<span class="badge bus ${back}">${backTxt}만</span>`;
+    const go = CFG.busGo(m), back = CFG.busBack(m);
+    if (!go && !back) return '<span class="badge leg none">안 탐</span>';
+    let h = '';
+    if (go) h += '<span class="badge leg go">교회 &gt; 현지</span>';
+    if (back) h += `<span class="badge leg back">현지 &gt; 교회 (${back === 'early' ? '1시' : '끝나고'})</span>`;
+    return h;
   };
   const memHtml = m => {
     const dpt = CFG.kidDept(m.birth_year);
