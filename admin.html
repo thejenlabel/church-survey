@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=53">
+<link rel="stylesheet" href="style.css?v=54">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -159,6 +159,8 @@ $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
 if (PW) load();
 
 const keyOf = n => CFG.nameKey(n);
+const isYouth = s => CFG.YOUTH_GROUPS.includes(s.group_type); // 중고등부 신청 강조
+const youthTag = s => isYouth(s) ? ' <span class="badge youth">중고등부</span>' : '';
 const shortTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 // 사람 식별: 이름 같고 전화 규칙(뒤 8자리 중 6자리↑ 일치, 번호 없으면 이름만)에 맞으면 같은 사람 → 같은 식별키
 let IDMAP = new Map(); // member 객체 → 식별키
@@ -293,8 +295,8 @@ function render() {
     const dpt = CFG.kidDept(m.birth_year);
     return `<span class="mem"><span class="c-name">${dup[idOf(m)] > 1 ? '⚠️ ' : ''}${esc(m.name)}${typo.has(m) ? ' <span class="badge warn">이름 확인</span>' : ''}${m.birth_year ? ' <small>(' + esc(m.birth_year) + ')</small>' : ''}</span><span class="c-dept">${dpt ? '<span class="badge kidb">' + dpt + '</span>' : ''}</span><span class="c-meal"><span class="badge ${m.meal ? '' : 'no'}">식사${m.meal ? 'O' : 'X'}</span></span><span class="c-bus">${CFG.YOUTH_MODE ? (CFG.busAny(m) ? `<span class="badge" title="가는 ${CFG.busGo(m) ? 'O' : 'X'} · 오는 ${({ '': 'X', early: '1시', late: '끝나고' })[CFG.busBack(m)]}">차량${CFG.busGo(m) ? '↑' : ''}${CFG.busBack(m) ? ({ early: '↓1시', late: '↓끝' })[CFG.busBack(m)] : ''}</span>` : '<span class="badge no">차량X</span>') : `<span class="badge ${m.bus ? '' : 'no'}">차량${m.bus ? 'O' : 'X'}</span>`}</span><span class="c-phone">${m.phone ? esc(m.phone) : ''}</span><button class="rm-m${isSubmitter(m) ? ' owner' : ''}" data-sid="${sidOf(m)}" data-mname="${esc(m.name)}" aria-label="이 사람 삭제">×</button></span>`;
   };
-  $('rows').innerHTML = list.map(s => `<tr>
-    <td><b>${esc(s.name)}</b></td>
+  $('rows').innerHTML = list.map(s => `<tr class="${isYouth(s) ? 'youth-row' : ''}">
+    <td><b>${esc(s.name)}</b>${youthTag(s)}</td>
     <td class="wrapcell">${esc(s.group_type)}</td>
     <td class="wrapcell">${esc(s.sub_group) || '-'}</td>
     <td>${s.members.length}</td>
@@ -306,8 +308,8 @@ function render() {
   </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:30px">데이터가 없습니다</td></tr>';
 
   // 모바일 카드
-  $('cards').innerHTML = list.map(s => `<div class="scard">
-    <div class="scard-h"><b>${esc(s.name)}</b><span class="scard-g">${esc(s.sub_group) || esc(s.group_type)}</span><span class="acts"><button class="btn edit" data-edit="${s.id}">수정</button><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></span></div>
+  $('cards').innerHTML = list.map(s => `<div class="scard ${isYouth(s) ? 'youth-row' : ''}">
+    <div class="scard-h"><b>${esc(s.name)}</b>${youthTag(s)}<span class="scard-g">${esc(s.sub_group) || esc(s.group_type)}</span><span class="acts"><button class="btn edit" data-edit="${s.id}">수정</button><button class="btn danger" data-id="${s.id}" data-name="${esc(s.name)}">삭제</button></span></div>
     <div class="scard-n">식사 ${s.members.filter(m => m.meal && CFG.countsFor(m)).length}명 · 교회 차량 ${s.members.filter(m => m.bus && CFG.countsFor(m)).length}명<span class="scard-t">${shortTime(s.created_at)}</span></div>
     ${s.members.map(memHtml).join('')}
   </div>`).join('') || '<div class="card" style="text-align:center;color:#9ca3af">데이터가 없습니다</div>';
