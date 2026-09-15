@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>온가족예배 참석자 사전조사 관리자 페이지</title>
-<link rel="stylesheet" href="style.css?v=70">
+<link rel="stylesheet" href="style.css?v=71">
 <link rel="icon" href="favicon.png">
 <script>try{localStorage.setItem("nl-hud:public:v1","hidden")}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -349,7 +349,7 @@ document.addEventListener('input', e => {
 function edStep(n) { ['edP1', 'edP2', 'edP3'].forEach((id, i) => $(id).hidden = i + 1 !== n); $('edSteps').querySelectorAll('.st').forEach((el, i) => { el.classList.toggle('on', i + 1 === n); el.classList.toggle('done', i + 1 < n); }); $('editor').scrollTop = 0; }
 function edAddMember(m = null, isSelf = false) {
   const d = document.createElement('div'); d.className = 'member';
-  const seg = (cls, opts) => `<input type="hidden" class="${cls}"><div class="seg">${opts.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('')}</div>`;
+  const seg = (cls, opts, cols = 2) => `<input type="hidden" class="${cls}"><div class="seg${cols === 3 ? ' three' : ''}">${opts.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('')}</div>`;
   // 본인은 1화면에서 받은 이름·전화를 그대로 쓰고(숨김), 출생년도·식사·차량만
   d.innerHTML = isSelf ? `
     <div class="member-h"><h4>본인</h4></div>
@@ -359,7 +359,7 @@ function edAddMember(m = null, isSelf = false) {
       <div><label>출생년도 <em>필수</em></label><div class="year-wrap"><input class="m-birth" inputmode="numeric" maxlength="4" placeholder="1980" autocomplete="off"><span>년</span></div><div class="dept hint"></div></div>
       <div class="row-gap"></div>
       <div><label>식사 <em>필수</em></label>${seg('m-meal', CFG.MEAL)}</div>
-      <div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>
+      ${CFG.YOUTH_MODE ? `<div><label>가는 차량 (교회 > 현지) <em>필수</em></label>${seg('m-busgo', CFG.BUS_GO)}</div><div><label>오는 차량 (현지 > 교회) <em>필수</em></label>${seg('m-busback', CFG.BUS_BACK, 3)}</div><input type="hidden" class="m-bus">` : `<div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>`}
     </div>` : `
     <div class="member-h"><h4>동반 가족</h4><button type="button" class="rm">삭제</button></div>
     <div class="row">
@@ -368,12 +368,15 @@ function edAddMember(m = null, isSelf = false) {
       <div><label>전화번호 <em>필수</em> <small class="hint" style="display:inline">(${CFG.PHONE_OPTIONAL_FROM}년 이후 출생은 생략 가능)</small></label><input class="m-phone" inputmode="numeric" maxlength="13" placeholder="01012345678" autocomplete="off"></div>
       <div class="row-gap"></div>
       <div><label>식사 <em>필수</em></label>${seg('m-meal', CFG.MEAL)}</div>
-      <div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>
+      ${CFG.YOUTH_MODE ? `<div><label>가는 차량 (교회 > 현지) <em>필수</em></label>${seg('m-busgo', CFG.BUS_GO)}</div><div><label>오는 차량 (현지 > 교회) <em>필수</em></label>${seg('m-busback', CFG.BUS_BACK, 3)}</div><input type="hidden" class="m-bus">` : `<div><label>교회 차량 <em>필수</em></label>${seg('m-bus', CFG.BUS)}</div>`}
     </div>`;
   d.querySelectorAll('.seg').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); g.previousElementSibling.value = b.dataset.v; }));
   if (m) {
     d.querySelector('.m-name').value = m.name || ''; d.querySelector('.m-birth').value = m.birth_year || ''; d.querySelector('.m-phone').value = m.phone || '';
-    for (const [cls, v] of [['m-meal', m.meal], ['m-bus', m.bus]]) { if (v === undefined || v === null || v === '') continue; const inp = d.querySelector('.' + cls); inp.value = String(+v); const b = inp.nextElementSibling.querySelector(`button[data-v="${+v}"]`); if (b) b.classList.add('on'); }
+    const pre = (cls, v) => { const inp = d.querySelector('.' + cls); if (!inp || v === undefined || v === null) return; inp.value = String(v); const sib = inp.nextElementSibling; const b = sib && sib.classList && sib.classList.contains('seg') ? sib.querySelector(`button[data-v="${v}"]`) : null; if (b) b.classList.add('on'); };
+    if (m.meal !== undefined && m.meal !== '') pre('m-meal', +m.meal);
+    if (CFG.YOUTH_MODE) { pre('m-busgo', CFG.busGo(m)); pre('m-busback', CFG.busBack(m)); }
+    else if (m.bus !== undefined && m.bus !== '') pre('m-bus', +m.bus);
   }
   if (isSelf) { d.querySelector('.m-name').value = $('edName').value; d.querySelector('.m-phone').value = $('edPhone').value; }
   $('edMembers').appendChild(d);
@@ -415,13 +418,22 @@ $('edSave').onclick = async () => {
   for (const r of rows) {
     const isSelf = r === rows[0];
     const m = { name: r.querySelector('.m-name').value.replace(/\s+/g, ''), birth_year: r.querySelector('.m-birth').value.trim(), phone: CFG.fmtPhone(r.querySelector('.m-phone').value), meal: r.querySelector('.m-meal').value, bus: r.querySelector('.m-bus').value };
-    if (!isSelf && !m.name && !m.birth_year && !m.phone && m.meal === '' && m.bus === '') continue;
+    let busPicked = m.bus !== '';
+    if (CFG.YOUTH_MODE) {
+      const go = r.querySelector('.m-busgo').value, back = r.querySelector('.m-busback').value;
+      const goSel = r.querySelector('.m-busgo + .seg .on'), backSel = r.querySelector('.m-busback + .seg .on');
+      m.bus_go = go === '' ? 0 : +go; m.bus_back = back; m.bus = (+go || back) ? 1 : 0;
+      busPicked = !!(goSel && backSel);
+    }
+    if (!isSelf && !m.name && !m.birth_year && !m.phone && m.meal === '' && !busPicked) continue;
     if (!m.name) return fail('이름이 비어 있는 칸이 있습니다.');
     if (!/^\d{4}$/.test(m.birth_year)) return fail(`${m.name}님 출생년도 4자리를 입력해 주세요.`);
     const phoneOptional = !isSelf && +m.birth_year >= CFG.PHONE_OPTIONAL_FROM;
     if (!phoneOptional && CFG.phoneTail(m.phone).length < 8) return fail(`${m.name}님 전화번호를 입력해 주세요.`);
-    if (m.meal === '' || m.bus === '') return fail(`${m.name}님의 식사·차량을 선택해 주세요.`);
-    m.meal = +m.meal; m.bus = +m.bus; members.push(m);
+    if (m.meal === '' || !busPicked) return fail(`${m.name}님의 식사·차량을 선택해 주세요.`);
+    m.meal = +m.meal; m.bus = +m.bus;
+    if (!CFG.YOUTH_MODE) { m.bus_go = m.bus; m.bus_back = m.bus ? 'late' : ''; }
+    members.push(m);
   }
   for (let i = 0; i < members.length; i++) for (let j = i + 1; j < members.length; j++) if (CFG.samePerson(members[i], members[j])) return fail(`${members[i].name}님과 ${members[j].name}님이 같은 사람으로 보입니다. 한 명만 남겨 주세요.`);
   $('edSave').disabled = true;
