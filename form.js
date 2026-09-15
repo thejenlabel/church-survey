@@ -193,6 +193,19 @@ $('submit').onclick = async () => {
   }
   $('err2').textContent = '';
   $('submit').disabled = true; const label = $('submit').textContent; $('submit').textContent = '저장 중…';
+  // 동반으로 적은 사람이 이미 본인 명의로 신청했다면(예: 중고등부 폼) 그 신청을 정본으로 두고 여기서는 뺀다
+  try {
+    const cTails = [...new Set(members.slice(1).map(m => CFG.phoneTail(m.phone)).filter(t => t.length === 8))];
+    if (cTails.length) {
+      const sim = await rpc('find_similar', { p_tails: cTails }) || [];
+      const own = members.slice(1).filter(m => sim.some(x => x.is_self && CFG.samePerson(m, { name: x.person, phone: x.phone, birth_year: x.birth_year })));
+      if (own.length) {
+        await choose(`${own.map(m => m.name).join(', ')}님은 본인이 직접 신청했습니다.\n그 신청을 그대로 두고, 이 신청서에서는 빼고 저장합니다.`, [{ label: '확인', value: true, primary: true }]);
+        for (const m of own) { const i = members.indexOf(m); if (i > 0) members.splice(i, 1); }
+        if (!members.length) { $('err2').textContent = '저장할 사람이 없습니다.'; $('submit').disabled = false; $('submit').textContent = label; return; }
+      }
+    }
+  } catch (e) { console.error(e); }
   const g = $('group').value;
   const body = { name: members[0].name, group_type: g, sub_group: CFG.hasSub(g) ? $('sub').value : '', members };
   try {
