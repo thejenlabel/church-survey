@@ -32,6 +32,7 @@
     </div>
   </div>
   <div class="hint" id="notice"></div>
+  <div class="hint" id="dlNote" hidden></div>
 
   <div id="app" hidden>
     <section class="sec sec-summary">
@@ -571,7 +572,30 @@ function showView(bus) {
 }
 $('tabList').onclick = () => showView(false);
 $('tabBus').onclick = () => showView(true);
+// ── 엑셀 다운로드 ──
+// 인앱 브라우저(카카오톡·네이버·인스타 등)는 파일 저장이 막혀 있어 버튼을 눌러도 아무 일이 안 생긴다 → 외부 브라우저(크롬·사파리)로 열도록 안내
+const INAPP = (() => { const ua = navigator.userAgent || ''; if (/KAKAOTALK/i.test(ua)) return 'kakao'; if (/NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|; wv\)/i.test(ua)) return 'other'; return ''; })();
+function openExternal() {
+  const url = location.href.split('#')[0];
+  if (INAPP === 'kakao') { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); return; }
+  try { navigator.clipboard && navigator.clipboard.writeText(url); } catch (e) { /* 무시 */ }
+  notify('오른쪽 위 메뉴(⋮ 또는 공유)에서 "다른 브라우저로 열기"를 눌러 주세요.\n주소가 복사되어 있으니 크롬·사파리 주소창에 붙여넣어도 됩니다.');
+}
+if (INAPP) { const n = $('dlNote'); n.hidden = false; n.innerHTML = '지금은 앱 안의 브라우저로 열려 있어 <b>엑셀 파일 저장이 안 됩니다.</b> 크롬·사파리에서 열어 주세요. '; const b = document.createElement('button'); b.className = 'btn ghost'; b.textContent = '외부 브라우저로 열기'; b.onclick = openExternal; n.appendChild(b); }
+async function ensureExcelJS() {
+  if (window.ExcelJS) return;
+  await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'; sc.onload = ok; sc.onerror = () => no(new Error('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.')); document.head.appendChild(sc); });
+  if (!window.ExcelJS) throw new Error('엑셀 라이브러리를 불러오지 못했습니다.');
+}
 $('excel').onclick = async () => {
+  const btn = $('excel'); if (btn.disabled) return;
+  if (INAPP === 'kakao') { const go = await choose('카카오톡 안에서는 엑셀 파일을 저장할 수 없습니다.\n크롬·사파리로 열어서 다시 눌러 주세요. (비밀번호는 다시 입력)', [{ label: '외부 브라우저로 열기', value: true, primary: true }, { label: '닫기', value: false }]); if (go) openExternal(); return; }
+  btn.disabled = true; const label = btn.textContent; btn.textContent = '엑셀 만드는 중…';
+  try { await ensureExcelJS(); const fname = await buildExcel(); if (INAPP) notify('파일이 보이지 않으면 메뉴(⋮)에서 "다른 브라우저로 열기" 후 다시 받아 주세요.'); else { const n = $('dlNote'); n.hidden = false; n.textContent = `엑셀 파일을 내려받았습니다: ${fname} (다운로드 폴더 확인)`; setTimeout(() => { if (n.textContent.startsWith('엑셀 파일을')) { n.textContent = ''; n.hidden = true; } }, 8000); } }
+  catch (err) { console.error(err); await notify('엑셀 만들기 실패: ' + ((err && err.message) || err) + '\n새로고침 후 다시 시도해 주세요.'); }
+  finally { btn.disabled = false; btn.textContent = label; }
+};
+async function buildExcel() {
   const OX = v => v ? 'O' : 'X';
   const fmtTime = t => new Date(t).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
   const NAVY = 'FF2E3A8C', LIGHT = 'FFEEF1F8', LINE = 'FFD9DEEA';
@@ -649,7 +673,7 @@ $('excel').onclick = async () => {
   ], people.map((p, i) => ({ no: i + 1, name: p.m.name, birth: p.m.birth_year || '', dept: CFG.kidDept(p.m.birth_year), phone: p.m.phone || '', meal: OX(p.m.meal), bus: OX(p.m.bus), cnt: CFG.countsFor(p.m) ? '포함' : '제외', group: p.s.group_type, sub: p.s.sub_group || '', by: p.s.name, kind: p.self ? '본인' : '동반' })));
 
   // ④ 차량 탑승자
-  const riders = people.filter(p => CFG.busAny(p.m) && CFG.countsFor(p.m)).sort((a, b) => a.m.name.localeCompare(b.m.name, 'ko'));
+  const riders = people.filter(p => CFG.busAny(p.m) && CFG.countsFor(p.m)).sort((a, b) => String(a.m.name || '').localeCompare(String(b.m.name || ''), 'ko'));
   sheet('차량탑승자', '교회 차량 탑승자 명단', [
     { h: '번호', k: 'no', w: 6, align: 'center' }, { h: '이름', k: 'name', w: 12 }, { h: '생년', k: 'birth', w: 8, align: 'center' }, { h: '전화번호', k: 'phone', w: 15, align: 'center' }, { h: '소속', k: 'sub', w: 22 }, { h: '신청자', k: 'by', w: 12 },
     { h: '교회→현지', k: 'go', w: 10, align: 'center' }, { h: '현지(1시)→교회', k: 'early', w: 13, align: 'center' }, { h: '현지(끝나고)→교회', k: 'late', w: 15, align: 'center' },
@@ -660,8 +684,10 @@ $('excel').onclick = async () => {
 
   const buf = await wb.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-  const link = document.createElement('a'); link.href = url; link.download = `온가족예배_참석조사_${new Date().toISOString().slice(0, 10)}.xlsx`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
-};
+  const fname = `온가족예배_참석조사_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const link = document.createElement('a'); link.href = url; link.download = fname; link.rel = 'noopener'; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return fname;
+}
 </script>
 </body>
 </html>
