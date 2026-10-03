@@ -1,0 +1,3 @@
+{
+  "functions": { "api/excel.js": { "includeFiles": "{config.js,excel_build.js}", "maxDuration": 30 } }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "church-survey",
+  "private": true,
+  "description": "판교이음교회 온가족예배 참석자 사전조사 — 정적 폼 + 관리자 + 서버 엑셀(api/excel.js)",
+  "engines": { "node": "22.x" },
+  "scripts": { "test": "node tests/identity.test.js && node tests/excel.test.js" },
+  "dependencies": { "exceljs": "^4.4.0" }
+}

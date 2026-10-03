@@ -2,3 +2,5 @@
 .netlify
 .git
 README.md
+node_modules
+tests
